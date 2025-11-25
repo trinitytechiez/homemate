@@ -1,0 +1,175 @@
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.fullScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.spinner {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.spinnerRing {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.spinnerRing:nth-child(1) {
+  animation-delay: -0.45s;
+}
+
+.spinnerRing:nth-child(2) {
+  animation-delay: -0.3s;
+  border-top-color: var(--secondary-color);
+  opacity: 0.7;
+}
+
+.spinnerRing:nth-child(3) {
+  animation-delay: -0.15s;
+  border-top-color: var(--info-color);
+  opacity: 0.5;
+}
+
+.spinnerRing:nth-child(4) {
+  border-top-color: var(--primary-color);
+  opacity: 0.3;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loaderText {
+  color: var(--secondary-color);
+  font-size: 0.95rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+// Size variants
+.small {
+  .spinner {
+    width: 32px;
+    height: 32px;
+  }
+
+  .spinnerRing {
+    border-width: 2px;
+  }
+
+  .loaderText {
+    font-size: 0.85rem;
+  }
+}
+
+.medium {
+  .spinner {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+.large {
+  .spinner {
+    width: 96px;
+    height: 96px;
+  }
+
+  .spinnerRing {
+    border-width: 4px;
+  }
+
+  .loaderText {
+    font-size: 1.1rem;
+  }
+}
+
+// Button loader variant
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  flex-direction: row;
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+  }
+
+  .spinnerRing {
+    border-width: 2px;
+    border-top-color: currentColor;
+  }
+
+  .spinnerRing:nth-child(1),
+  .spinnerRing:nth-child(2),
+  .spinnerRing:nth-child(3),
+  .spinnerRing:nth-child(4) {
+    border-top-color: currentColor;
+  }
+
+  .loaderText {
+    font-size: inherit;
+    margin: 0;
+  }
+}
+
+// Inline loader
+.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+  }
+
+  .spinnerRing {
+    border-width: 2px;
+  }
+
+  .loaderText {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .spinner {
+    width: 48px;
+    height: 48px;
+  }
+
+  .large .spinner {
+    width: 72px;
+    height: 72px;
+  }
+}
+
