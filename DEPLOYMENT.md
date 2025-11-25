@@ -102,6 +102,8 @@ Vercel will auto-detect your project structure. Configure as follows:
 - **Output Directory**: `dist` (auto-detected)
 - **Install Command**: `npm install`
 
+**Note**: If you get import resolution errors, ensure all imports in `App.jsx` have explicit `.jsx` extensions (already fixed in the codebase).
+
 #### Environment Variables
 Click **Environment Variables** and add:
 

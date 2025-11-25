@@ -2,6 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 export default defineConfig({
   plugins: [
     react(),
@@ -33,11 +39,19 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+      },
+      strategies: 'generateSW',
+      injectRegister: 'auto',
+      devOptions: {
+        enabled: false
       }
     })
   ],
   resolve: {
-    extensions: ['.js', '.jsx', '.json', '.scss']
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
   },
   css: {
     modules: {
