@@ -299,10 +299,17 @@ const Login = () => {
         // Logging disabled - remove if needed for debugging
       }
       
+      // Log the request for debugging
+      console.log('🔐 Attempting login with:', { email: trimmedEmail, passwordLength: trimmedPassword.length })
+      console.log('🔗 API Base URL:', api.defaults.baseURL)
+      
       const response = await api.post('/auth/login', loginData)
+      
+      console.log('✅ Login response received:', response.status)
       
       // Check if token exists in response
       if (!response.data.token) {
+        console.error('❌ No token in response:', response.data)
         throw new Error('No token received from server')
       }
       
@@ -310,7 +317,42 @@ const Login = () => {
       setAuth(response.data.token)
       navigate('/dashboard', { replace: true })
     } catch (error) {
-      console.error('Login error:', error)
+      console.error('❌ Login error:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+          method: error.config?.method
+        }
+      })
+      
+      // Check for network errors
+      if (!error.response) {
+        const networkError = error.message || 'Network error - unable to reach server'
+        openModal({
+          title: 'Connection Error',
+          content: (
+            <div>
+              <p>{networkError}</p>
+              <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
+                Please check:
+                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
+                  <li>Backend server is running on port 5001</li>
+                  <li>API URL: {api.defaults.baseURL}</li>
+                  <li>No CORS errors in browser console</li>
+                </ul>
+              </p>
+            </div>
+          ),
+          size: 'small'
+        })
+        return
+      }
+      
       const errorMessage = error.response?.data?.message || error.message || 'Something went wrong. Please try again.'
       
       // Check if it's a password mismatch error

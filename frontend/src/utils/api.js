@@ -1,6 +1,30 @@
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+// Get API URL from environment variable or use default
+const getApiUrl = () => {
+  // Check for environment variable first
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  
+  // In production (deployed), warn if using localhost
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    console.error('⚠️ VITE_API_URL is not set! Using localhost fallback.')
+    console.error('Please set VITE_API_URL environment variable in Vercel.')
+    // Still use localhost as fallback, but log the error
+    return 'http://localhost:5001/api'
+  }
+  
+  // Development - use localhost
+  return 'http://localhost:5001/api'
+}
+
+const API_URL = getApiUrl()
+
+// Always log API URL for debugging (helps identify caching issues)
+console.log('🔗 API URL configured:', API_URL)
+console.log('🔗 VITE_API_URL env var:', import.meta.env.VITE_API_URL || 'NOT SET')
+console.log('🔗 Current hostname:', window.location.hostname)
 
 const api = axios.create({
   baseURL: API_URL,
@@ -16,17 +40,56 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    // Log request in development
+    if (import.meta.env.DEV) {
+      console.log('📤 API Request:', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL,
+        fullURL: `${config.baseURL}${config.url}`
+      })
+    }
     return config
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error)
     return Promise.reject(error)
   }
 )
 
 // Handle response errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful responses in development
+    if (import.meta.env.DEV) {
+      console.log('📥 API Response:', {
+        status: response.status,
+        url: response.config.url,
+        data: response.data
+      })
+    }
+    return response
+  },
   (error) => {
+    // Log error responses
+    console.error('📥 API Error Response:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+      message: error.message,
+      data: error.response?.data
+    })
+    
+    // Check for network errors (no response)
+    if (!error.response) {
+      console.error('🌐 Network Error - No response from server:', {
+        message: error.message,
+        code: error.code,
+        config: error.config
+      })
+    }
+    
     if (error.response?.status === 401) {
       // Only redirect if not already on login page
       // This prevents redirect loops during login attempts
