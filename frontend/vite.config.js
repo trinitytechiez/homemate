@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename)
 export default defineConfig({
   plugins: [
     react({
-      include: '**/*.{jsx,js}'
+      jsxRuntime: 'automatic'
     })
   ],
   resolve: {

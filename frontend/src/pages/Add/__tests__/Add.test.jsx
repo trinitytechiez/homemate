@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
-import Add from '../index'
+import Add from '../index.jsx'
 import { ModalProvider } from '../../../contexts/ModalContext'
 import { ToastProvider } from '../../../contexts/ToastContext'
 import { addStaffMember } from '../../../utils/staffData'
