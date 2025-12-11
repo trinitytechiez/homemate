@@ -1,0 +1,135 @@
+// Theme Index - Import theme based on data attribute
+// Default to light theme
+
+// Import mixins first
+@import '../mixins/mixins';
+
+// Import light theme by default
+@import './light';
+
+// Apply theme variables to CSS custom properties
+:root {
+  // Colors
+  --primary: #{$primary};
+  --primary-hover: #{$primary-hover};
+  --primary-light: #{$primary-light};
+  --primary-dark: #{$primary-dark};
+  
+  --secondary: #{$secondary};
+  --secondary-hover: #{$secondary-hover};
+  
+  --bg-primary: #{$bg-primary};
+  --bg-secondary: #{$bg-secondary};
+  --bg-tertiary: #{$bg-tertiary};
+  --bg-card: #{$bg-card};
+  --bg-overlay: #{$bg-overlay};
+  
+  --text-primary: #{$text-primary};
+  --text-secondary: #{$text-secondary};
+  --text-tertiary: #{$text-tertiary};
+  --text-inverse: #{$text-inverse};
+  
+  --border-primary: #{$border-primary};
+  --border-secondary: #{$border-secondary};
+  --border-focus: #{$border-focus};
+  
+  --success: #{$success};
+  --error: #{$error};
+  --warning: #{$warning};
+  --info: #{$info};
+  
+  --white: #{$white};
+  --black: #{$black};
+  
+  // Typography
+  --font-family: #{$font-family};
+  --font-size-xs: #{$font-size-xs};
+  --font-size-sm: #{$font-size-sm};
+  --font-size-base: #{$font-size-base};
+  --font-size-lg: #{$font-size-lg};
+  --font-size-xl: #{$font-size-xl};
+  --font-size-2xl: #{$font-size-2xl};
+  
+  --font-weight-light: #{$font-weight-light};
+  --font-weight-normal: #{$font-weight-normal};
+  --font-weight-medium: #{$font-weight-medium};
+  --font-weight-semibold: #{$font-weight-semibold};
+  --font-weight-bold: #{$font-weight-bold};
+  
+  --line-height-tight: #{$line-height-tight};
+  --line-height-normal: #{$line-height-normal};
+  --line-height-relaxed: #{$line-height-relaxed};
+  
+  // Spacing
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-md: #{$spacing-md};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
+  --spacing-2xl: #{$spacing-2xl};
+  
+  // Border Radius
+  --radius-none: #{$radius-none};
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+  --radius-full: #{$radius-full};
+  
+  // Shadows
+  --shadow-none: #{$shadow-none};
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+  --shadow-xl: #{$shadow-xl};
+  --shadow-inner: #{$shadow-inner};
+  
+  // Transitions
+  --transition-fast: #{$transition-fast};
+  --transition-normal: #{$transition-normal};
+  --transition-slow: #{$transition-slow};
+  
+  // Z-index
+  --z-dropdown: #{$z-dropdown};
+  --z-sticky: #{$z-sticky};
+  --z-fixed: #{$z-fixed};
+  --z-modal-backdrop: #{$z-modal-backdrop};
+  --z-modal: #{$z-modal};
+  --z-popover: #{$z-popover};
+  --z-tooltip: #{$z-tooltip};
+}
+
+// Dark theme override
+[data-theme='dark'] {
+  // Re-import dark theme variables
+  @import './dark';
+  
+  --primary: #{$primary};
+  --primary-hover: #{$primary-hover};
+  --primary-light: #{$primary-light};
+  --primary-dark: #{$primary-dark};
+  
+  --secondary: #{$secondary};
+  --secondary-hover: #{$secondary-hover};
+  
+  --bg-primary: #{$bg-primary};
+  --bg-secondary: #{$bg-secondary};
+  --bg-tertiary: #{$bg-tertiary};
+  --bg-card: #{$bg-card};
+  --bg-overlay: #{$bg-overlay};
+  
+  --text-primary: #{$text-primary};
+  --text-secondary: #{$text-secondary};
+  --text-tertiary: #{$text-tertiary};
+  --text-inverse: #{$text-inverse};
+  
+  --border-primary: #{$border-primary};
+  --border-secondary: #{$border-secondary};
+  --border-focus: #{$border-focus};
+  
+  --success: #{$success};
+  --error: #{$error};
+  --warning: #{$warning};
+  --info: #{$info};
+}
+

@@ -1,0 +1,104 @@
+// Light Theme
+@import './variables';
+
+// Color Palette
+$primary: #4A90E2;
+$primary-hover: #357ABD;
+$primary-light: rgba(74, 144, 226, 0.1);
+$primary-dark: #2E5A8A;
+
+$secondary: #6c757d;
+$secondary-hover: #5a6268;
+
+$bg-primary: #ffffff;
+$bg-secondary: #f8f9fa;
+$bg-tertiary: #f0f0f0;
+$bg-card: #ffffff;
+$bg-overlay: rgba(0, 0, 0, 0.5);
+
+$text-primary: #343a40;
+$text-secondary: #666666;
+$text-tertiary: #999999;
+$text-inverse: #ffffff;
+
+$border-primary: #e0e0e0;
+$border-secondary: #f0f0f0;
+$border-focus: #4A90E2;
+
+$success: #28a745;
+$error: #dc3545;
+$warning: #ffc107;
+$info: #17a2b8;
+
+$white: #ffffff;
+$black: #000000;
+$gray-50: #f8f9fa;
+$gray-100: #f1f3f5;
+$gray-200: #e9ecef;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #adb5bd;
+$gray-600: #6c757d;
+$gray-700: #495057;
+$gray-800: #343a40;
+$gray-900: #212529;
+
+// Typography
+$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+
+$font-size-xs: 0.75rem;    // 12px
+$font-size-sm: 0.875rem;   // 14px
+$font-size-base: 1rem;     // 16px
+$font-size-lg: 1.125rem;   // 18px
+$font-size-xl: 1.25rem;    // 20px
+$font-size-2xl: 1.75rem;    // 28px
+
+$font-weight-light: 300;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// Spacing
+$spacing-xs: 0.25rem;   // 4px
+$spacing-sm: 0.5rem;    // 8px
+$spacing-md: 0.75rem;   // 12px
+$spacing-lg: 1rem;      // 16px
+$spacing-xl: 1.5rem;    // 24px
+$spacing-2xl: 2rem;     // 32px
+
+// Border Radius
+$radius-none: 0;
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-full: 9999px;
+
+// Shadows
+$shadow-none: none;
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.15);
+$shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.2);
+$shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+
+// Transitions
+$transition-fast: all 0.15s ease;
+$transition-normal: all 0.3s ease;
+$transition-slow: all 0.5s ease;
+
+// Z-index
+$z-dropdown: 1000;
+$z-sticky: 1020;
+$z-fixed: 1030;
+$z-modal-backdrop: 1040;
+$z-modal: 1050;
+$z-popover: 1060;
+$z-tooltip: 1070;
+

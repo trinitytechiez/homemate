@@ -1,0 +1,122 @@
+// Theme Variables
+// This file defines the structure for theme variables
+// Actual theme values are in theme files (light, dark, etc.)
+
+// Color Palette Structure
+$theme-colors: (
+  // Primary colors
+  primary: null,
+  primary-hover: null,
+  primary-light: null,
+  primary-dark: null,
+  
+  // Secondary colors
+  secondary: null,
+  secondary-hover: null,
+  
+  // Background colors
+  bg-primary: null,
+  bg-secondary: null,
+  bg-tertiary: null,
+  bg-card: null,
+  bg-overlay: null,
+  
+  // Text colors
+  text-primary: null,
+  text-secondary: null,
+  text-tertiary: null,
+  text-inverse: null,
+  
+  // Border colors
+  border-primary: null,
+  border-secondary: null,
+  border-focus: null,
+  
+  // Status colors
+  success: null,
+  error: null,
+  warning: null,
+  info: null,
+  
+  // Neutral colors
+  white: null,
+  black: null,
+  gray-50: null,
+  gray-100: null,
+  gray-200: null,
+  gray-300: null,
+  gray-400: null,
+  gray-500: null,
+  gray-600: null,
+  gray-700: null,
+  gray-800: null,
+  gray-900: null,
+);
+
+// Typography
+$typography: (
+  font-family: null,
+  font-size-xs: null,
+  font-size-sm: null,
+  font-size-base: null,
+  font-size-lg: null,
+  font-size-xl: null,
+  font-size-2xl: null,
+  font-weight-light: null,
+  font-weight-normal: null,
+  font-weight-medium: null,
+  font-weight-semibold: null,
+  font-weight-bold: null,
+  line-height-tight: null,
+  line-height-normal: null,
+  line-height-relaxed: null,
+);
+
+// Spacing
+$spacing: (
+  xs: null,
+  sm: null,
+  md: null,
+  lg: null,
+  xl: null,
+  xxl: null,
+);
+
+// Border Radius
+$border-radius: (
+  none: null,
+  sm: null,
+  md: null,
+  lg: null,
+  xl: null,
+  full: null,
+);
+
+// Shadows
+$shadows: (
+  none: null,
+  sm: null,
+  md: null,
+  lg: null,
+  xl: null,
+  inner: null,
+);
+
+// Transitions
+$transitions: (
+  fast: null,
+  normal: null,
+  slow: null,
+);
+
+// Z-index
+$z-index: (
+  dropdown: null,
+  sticky: null,
+  fixed: null,
+  modal-backdrop: null,
+  modal: null,
+  popover: null,
+  tooltip: null,
+);
+
