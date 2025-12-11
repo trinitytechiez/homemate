@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -10,11 +11,15 @@ export default defineConfig({
   plugins: [
     react({
       jsxRuntime: 'automatic'
+    }),
+    nodePolyfills({
+      // Whether to polyfill `node:` protocol imports.
+      protocolImports: true,
     })
   ],
   resolve: {
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
-    mainFields: ['module', 'main'],
+    mainFields: ['browser', 'module', 'main'],
     alias: {
       '@': path.resolve(__dirname, './src')
     },
@@ -29,7 +34,8 @@ export default defineConfig({
       external: []
     },
     commonjsOptions: {
-      include: [/node_modules/]
+      include: [/node_modules/],
+      transformMixedEsModules: true
     }
   },
   css: {
