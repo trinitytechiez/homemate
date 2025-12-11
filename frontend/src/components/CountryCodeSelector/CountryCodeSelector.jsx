@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import PropTypes from 'prop-types'
 import styles from './CountryCodeSelector.module.scss'
 
 const countries = [
@@ -81,11 +80,6 @@ const CountryCodeSelector = ({ value = '+91', onChange }) => {
       )}
     </div>
   )
-}
-
-CountryCodeSelector.propTypes = {
-  value: PropTypes.string,
-  onChange: PropTypes.func.isRequired
 }
 
 export default CountryCodeSelector

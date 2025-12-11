@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types'
 import styles from './Loader.module.scss'
 
 const Loader = ({ 
@@ -29,13 +28,6 @@ const Loader = ({
       {text && <span className={styles.text}>{text}</span>}
     </div>
   )
-}
-
-Loader.propTypes = {
-  fullScreen: PropTypes.bool,
-  text: PropTypes.string,
-  size: PropTypes.oneOf(['small', 'medium', 'large']),
-  variant: PropTypes.oneOf(['default', 'button'])
 }
 
 export default Loader

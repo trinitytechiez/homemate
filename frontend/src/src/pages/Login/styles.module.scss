@@ -94,7 +94,7 @@
 .welcomeText {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--dark-color);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -116,7 +116,7 @@
 .label {
   font-size: 0.95rem;
   font-weight: 500;
-  color: var(--dark-color);
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   display: block;
 }
@@ -130,7 +130,7 @@
   flex: 1;
   display: flex;
   align-items: center;
-  border: 1px solid var(--dark-color);
+  border: 1px solid var(--border-primary);
   border-left: none;
   border-radius: 0 8px 8px 0;
   padding: 0.75rem 1rem;
@@ -150,7 +150,7 @@
   border: none;
   outline: none;
   font-size: 1rem;
-  color: var(--dark-color);
+  color: var(--text-primary);
   background: transparent;
   width: 100%;
 
@@ -213,7 +213,7 @@
 }
 
 .orText {
-  color: var(--dark-color);
+  color: var(--text-primary);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -251,7 +251,7 @@
 .otpTitle {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--dark-color);
+  color: var(--text-primary);
   margin: 0;
   text-align: center;
 }
@@ -274,7 +274,7 @@
 .otpLabel {
   font-size: 0.95rem;
   font-weight: 500;
-  color: var(--dark-color);
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
@@ -293,7 +293,7 @@
   text-align: center;
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--dark-color);
+  color: var(--text-primary);
   background-color: var(--white);
   transition: var(--transition);
 
@@ -313,7 +313,7 @@
 }
 
 .otpInputActive {
-  border-color: var(--dark-color);
+  border-color: var(--border-primary);
   border-width: 2px;
 }
 
@@ -327,13 +327,13 @@
 
 .resendText {
   font-size: 0.9rem;
-  color: var(--secondary-color);
+  color: var(--text-secondary);
 }
 
 .resendTimer {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--dark-color);
+  color: var(--text-primary);
 }
 
 .resendButton {
@@ -388,7 +388,7 @@
 .input {
   width: 100%;
   padding: 0.875rem;
-  border: 1px solid var(--dark-color);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
   font-size: 1rem;
   transition: var(--transition);
@@ -405,16 +405,16 @@
 }
 
 .inputError {
-  border-color: var(--danger-color);
+  border-color: var(--error);
 
   &:focus {
-    border-color: var(--danger-color);
+    border-color: var(--error);
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
   }
 }
 
 .errorText {
-  color: var(--danger-color);
+  color: var(--error);
   font-size: 0.85rem;
   margin-top: -0.25rem;
 }
