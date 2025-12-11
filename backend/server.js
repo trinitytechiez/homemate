@@ -57,7 +57,12 @@ const connectMongoDB = async () => {
     console.warn('   3. Restart the server')
     console.warn('')
     console.warn('📝 For now, using in-memory mock service')
-    console.warn('   Dummy user: test@homemate.com / test123456')
+    console.warn('')
+    console.warn('🧪 TEST CREDENTIALS (Mock Auth):')
+    console.warn('   Email: test@homemate.com')
+    console.warn('   Password: test123456')
+    console.warn('')
+    console.warn('💡 To create test users in real database, run: npm run seed')
   }
 }
 
