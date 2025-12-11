@@ -15,7 +15,11 @@ router.get('/profile', authMiddleware, async (req, res) => {
     // Ensure MongoDB connection (for serverless environments)
     const isConnected = await ensureMongoConnection()
     if (!isConnected) {
-      return sendErrorResponse(res, 503, 'Database not connected')
+      // Log connection state for debugging
+      const { getMongoStatus } = await import('../utils/db.utils.js')
+      console.error('Profile route: MongoDB not connected. Status:', getMongoStatus())
+      console.error('MONGODB_URI set:', !!process.env.MONGODB_URI)
+      return sendErrorResponse(res, 503, 'Database not connected. Please check server logs.')
     }
 
     const user = await User.findById(req.userId)

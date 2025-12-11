@@ -1,5 +1,9 @@
 // Database utility functions
 import mongoose from 'mongoose'
+import dotenv from 'dotenv'
+
+// Ensure dotenv is loaded (important for serverless environments)
+dotenv.config()
 
 /**
  * Check if MongoDB is connected
@@ -49,8 +53,13 @@ export const ensureMongoConnection = async () => {
   // Try to connect if disconnected
   if (mongoose.connection.readyState === 0) {
     try {
-      // Use environment variable (should be set by dotenv in server.js)
+      // Use environment variable (Vercel sets this automatically)
       const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homemate'
+      
+      if (!MONGODB_URI || MONGODB_URI === 'mongodb://localhost:27017/homemate') {
+        console.error('ensureMongoConnection: MONGODB_URI not set in environment variables')
+        return false
+      }
       
       // Ensure database name is in connection string
       let connectionUri = MONGODB_URI
@@ -68,12 +77,29 @@ export const ensureMongoConnection = async () => {
               : `${connectionUri}/homemate`
           }
         }
+        
+        // Add required query parameters if not present
+        const hasQueryParams = connectionUri.includes('?')
+        const params = []
+        
+        if (!connectionUri.includes('retryWrites=')) {
+          params.push('retryWrites=true')
+        }
+        
+        if (!connectionUri.includes('w=')) {
+          params.push('w=majority')
+        }
+        
+        if (params.length > 0) {
+          const separator = hasQueryParams ? '&' : '?'
+          connectionUri = `${connectionUri}${separator}${params.join('&')}`
+        }
       }
       
       // Connection options optimized for serverless
       const options = {
-        serverSelectionTimeoutMS: 10000,
-        connectTimeoutMS: 15000,
+        serverSelectionTimeoutMS: 15000,
+        connectTimeoutMS: 20000,
         maxPoolSize: 1,
         minPoolSize: 0,
         retryWrites: true,
@@ -81,16 +107,20 @@ export const ensureMongoConnection = async () => {
         bufferCommands: true
       }
       
-      if (isAtlasConnection) {
-        options.connectTimeoutMS = 20000
-        options.serverSelectionTimeoutMS = 15000
-      }
-      
+      console.log('ensureMongoConnection: Attempting to connect to MongoDB...')
       await mongoose.connect(connectionUri, options)
       
-      return mongoose.connection.readyState === 1
+      // Verify connection
+      if (mongoose.connection.readyState === 1) {
+        console.log('ensureMongoConnection: Successfully connected to MongoDB')
+        return true
+      } else {
+        console.error('ensureMongoConnection: Connection completed but state is not connected:', mongoose.connection.readyState)
+        return false
+      }
     } catch (error) {
       console.error('ensureMongoConnection error:', error.message)
+      console.error('Error stack:', error.stack)
       return false
     }
   }

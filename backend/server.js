@@ -332,15 +332,24 @@ app.use(async (req, res, next) => {
 app.get('/health', async (req, res) => {
   // Try to connect if not connected
   if (mongoose.connection.readyState === 0) {
-    await connectMongoDB()
+    try {
+      await connectMongoDB()
+    } catch (error) {
+      console.error('Health check: Connection attempt failed:', error.message)
+    }
   }
   
+  const mongoStatus = getMongoStatus()
+  const hasMongoUri = !!process.env.MONGODB_URI
+  
   res.json({ 
-    status: 'OK', 
+    status: mongoStatus === 'connected' ? 'OK' : 'WARNING', 
     message: 'HomeMate API is running',
     mongodb: {
-      status: getMongoStatus(),
-      readyState: mongoose.connection.readyState
+      status: mongoStatus,
+      readyState: mongoose.connection.readyState,
+      uriConfigured: hasMongoUri,
+      environment: process.env.NODE_ENV || 'development'
     }
   })
 })
