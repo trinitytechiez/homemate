@@ -8,7 +8,9 @@ const __dirname = path.dirname(__filename)
 
 export default defineConfig({
   plugins: [
-    react()
+    react({
+      include: '**/*.{jsx,js}'
+    })
   ],
   resolve: {
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
