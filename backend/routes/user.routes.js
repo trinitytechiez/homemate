@@ -3,7 +3,7 @@ import { body } from 'express-validator'
 import User from '../models/User.model.js'
 import Staff from '../models/Staff.model.js'
 import authMiddleware from '../middleware/auth.middleware.js'
-import { isMongoConnected } from '../utils/db.utils.js'
+import { isMongoConnected, ensureMongoConnection } from '../utils/db.utils.js'
 import { checkValidation } from '../utils/validation.utils.js'
 import { sendErrorResponse, sendSuccessResponse } from '../utils/response.utils.js'
 import { formatUserResponse } from '../utils/auth.utils.js'
@@ -12,7 +12,9 @@ const router = express.Router()
 
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
-    if (!isMongoConnected()) {
+    // Ensure MongoDB connection (for serverless environments)
+    const isConnected = await ensureMongoConnection()
+    if (!isConnected) {
       return sendErrorResponse(res, 503, 'Database not connected')
     }
 
@@ -42,7 +44,8 @@ router.put(
   ],
   async (req, res) => {
     try {
-      if (!isMongoConnected()) {
+      const isConnected = await ensureMongoConnection()
+      if (!isConnected) {
         return sendErrorResponse(res, 503, 'Database not connected')
       }
 
@@ -85,7 +88,8 @@ router.put(
   ],
   async (req, res) => {
     try {
-      if (!isMongoConnected()) {
+      const isConnected = await ensureMongoConnection()
+      if (!isConnected) {
         return sendErrorResponse(res, 503, 'Database not connected')
       }
 
@@ -120,7 +124,8 @@ router.put(
   ],
   async (req, res) => {
     try {
-      if (!isMongoConnected()) {
+      const isConnected = await ensureMongoConnection()
+      if (!isConnected) {
         return sendErrorResponse(res, 503, 'Database not connected')
       }
 
@@ -155,7 +160,8 @@ router.put(
 
 router.delete('/account', authMiddleware, async (req, res) => {
   try {
-    if (!isMongoConnected()) {
+    const isConnected = await ensureMongoConnection()
+    if (!isConnected) {
       return sendErrorResponse(res, 503, 'Database not connected')
     }
 

@@ -302,14 +302,28 @@ app.use(async (req, res, next) => {
     return next()
   }
   
-  // If not connected and not connecting, try to connect
+  // If not connected, try to connect and wait for it
   if (mongoose.connection.readyState === 0) {
-    await connectMongoDB()
+    try {
+      await connectMongoDB()
+    } catch (error) {
+      // Connection failed, but continue (routes will handle 503)
+      console.warn('Middleware: MongoDB connection attempt failed:', error.message)
+    }
   }
   
-  // If still connecting, wait a bit
+  // If connecting, wait for connection to complete (with timeout)
   if (mongoose.connection.readyState === 2) {
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const maxWait = 5000 // 5 seconds max wait
+    const startTime = Date.now()
+    while (mongoose.connection.readyState === 2 && (Date.now() - startTime) < maxWait) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+  }
+  
+  // If still not connected after waiting, log but continue
+  if (mongoose.connection.readyState !== 1) {
+    console.warn(`Middleware: MongoDB not connected (state: ${mongoose.connection.readyState}) for ${req.path}`)
   }
   
   next()
