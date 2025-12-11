@@ -1,0 +1,207 @@
+.settingsContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--white);
+  padding-bottom: 80px; // Space for bottom navigation
+}
+
+.settingsContent {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.appTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #4A90E2;
+  margin: 0 0 1rem 0;
+  letter-spacing: -0.5px;
+}
+
+.settingsList {
+  padding: 0;
+  background-color: var(--white);
+}
+
+.settingItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+
+  &:hover {
+    background-color: #f8f9fa;
+  }
+
+  &:active {
+    background-color: #f0f0f0;
+  }
+}
+
+.settingIcon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.iconPerson,
+.iconPersonCard,
+.iconLogout {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settingLabel {
+  flex: 1;
+  font-size: 1rem;
+  color: var(--dark-color);
+  font-weight: 400;
+}
+
+.settingArrow {
+  font-size: 1.2rem;
+  color: #999999;
+  font-weight: 300;
+}
+
+.divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 0 1.5rem;
+}
+
+.aboutSection {
+  padding: 2rem 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.aboutLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: var(--transition);
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.infoIcon {
+  font-size: 1rem;
+  color: #4A90E2;
+}
+
+.aboutText {
+  font-size: 0.95rem;
+  color: #4A90E2;
+  text-decoration: underline;
+  font-weight: 400;
+}
+
+.confirmationContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0.5rem 0;
+}
+
+.confirmationMessage {
+  font-size: 1rem;
+  color: var(--dark-color);
+  line-height: 1.5;
+  margin: 0;
+  text-align: center;
+}
+
+.confirmationActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.confirmButton,
+.cancelButton {
+  flex: 1;
+  padding: 0.875rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.confirmButton {
+  background-color: #dc3545;
+  color: var(--white);
+  border: none;
+
+  &:hover {
+    background-color: #c82333;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.cancelButton {
+  background-color: transparent;
+  color: var(--dark-color);
+  border: 2px solid var(--dark-color);
+
+  &:hover {
+    background-color: #f8f9fa;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 1rem;
+  }
+
+  .appTitle {
+    font-size: 1.1rem;
+  }
+
+  .settingItem {
+    padding: 0.875rem 1rem;
+  }
+
+  .settingLabel {
+    font-size: 0.95rem;
+  }
+
+  .divider {
+    margin: 0 1rem;
+  }
+
+  .aboutSection {
+    padding: 1.5rem 1rem;
+  }
+}

@@ -1,0 +1,113 @@
+@import '../../../styles/themes/index';
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: $spacing-lg;
+  @include fade-in;
+}
+
+.modalContent {
+  background-color: var(--bg-card);
+  border-radius: $radius-lg;
+  box-shadow: var(--shadow-xl);
+  max-height: 90vh;
+  overflow-y: auto;
+  @include custom-scrollbar;
+  @include slide-up;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-xl;
+  border-bottom: 1px solid var(--border-secondary);
+  flex-shrink: 0;
+}
+
+.modalTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-sm;
+  transition: var(--transition-fast);
+  
+  &:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+  
+  &:focus {
+    @include focus-ring;
+  }
+}
+
+.modalBody {
+  padding: $spacing-xl;
+  flex: 1;
+  overflow-y: auto;
+}
+
+// Sizes
+.small {
+  max-width: 400px;
+}
+
+.medium {
+  max-width: 600px;
+}
+
+.large {
+  max-width: 800px;
+}
+
+.fullscreen {
+  max-width: 100%;
+  max-height: 100vh;
+  height: 100vh;
+  border-radius: 0;
+}
+
+@include mobile {
+  .modalOverlay {
+    padding: 0;
+  }
+  
+  .modalContent {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .fullscreen {
+    height: 100vh;
+  }
+}
+
