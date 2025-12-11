@@ -96,9 +96,9 @@ const Dashboard = () => {
     staff.role.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-      if (isLoading) {
-        return <Loader fullScreen text="Loading dashboard..." />
-      }
+  if (isLoading) {
+    return <Loader fullScreen text="Loading dashboard..." />
+  }
 
   return (
     <div className={styles.dashboardContainer}>
