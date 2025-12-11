@@ -9,6 +9,8 @@
     "start": "node server.js",
     "build": "echo 'No build step required'",
     "seed": "node scripts/seed.js",
+    "check:ip": "node scripts/check-ip.js",
+    "diagnose:db": "node scripts/diagnose-mongodb.js",
     "test:db": "node scripts/test-mongodb.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
