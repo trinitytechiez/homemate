@@ -14,6 +14,7 @@ export default defineConfig({
   ],
   resolve: {
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
+    mainFields: ['module', 'main'],
     alias: {
       '@': path.resolve(__dirname, './src')
     },
