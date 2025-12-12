@@ -4,6 +4,7 @@ import { ToastProvider } from './contexts/ToastContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
 import PublicRoute from './components/PublicRoute/PublicRoute'
+import DesktopFallback from './components/DesktopFallback/DesktopFallback'
 import Login from './pages/Login/index'
 import Register from './pages/Register/index'
 import SetPassword from './pages/SetPassword/index'
@@ -22,7 +23,8 @@ function App() {
     <ThemeProvider>
       <ToastProvider>
         <ModalProvider>
-          <Router>
+          <DesktopFallback>
+            <Router>
         <div className={styles.app}>
               <Routes>
                 {/* Public routes - redirect to dashboard if authenticated */}
@@ -135,6 +137,7 @@ function App() {
               </Routes>
         </div>
       </Router>
+          </DesktopFallback>
     </ModalProvider>
     </ToastProvider>
     </ThemeProvider>

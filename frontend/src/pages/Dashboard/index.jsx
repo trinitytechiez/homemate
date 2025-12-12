@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Loader from '../../components/Loader'
+import Shimmer from '../../components/Shimmer'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
 import StaffCard from '../../components/StaffCard/StaffCard'
 import { EmptyState } from '../../common/components'
 import { getStaffData, updateStaffAttendance } from '../../utils/staffData'
 import { useToast } from '../../contexts/ToastContext'
+import { useRequestCancellation } from '../../utils/useRequestCancellation'
 import styles from './styles.module.scss'
 
 const Dashboard = () => {
@@ -15,28 +16,38 @@ const Dashboard = () => {
   const [staffData, setStaffData] = useState([])
   const navigate = useNavigate()
   const { showError } = useToast()
+  const { signal, trackRequest, untrackRequest } = useRequestCancellation()
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await getStaffData()
-        const mappedData = data.map(staff => ({
-          ...staff,
-          id: staff._id || staff.id
-        }))
-        setStaffData(mappedData)
+        const data = await getStaffData(true, signal, trackRequest, untrackRequest)
+        // Check if component is still mounted and request wasn't cancelled
+        if (!signal?.aborted) {
+          const mappedData = data.map(staff => ({
+            ...staff,
+            id: staff._id || staff.id
+          }))
+          setStaffData(mappedData)
+        }
       } catch (error) {
+        // Don't handle cancelled requests
+        if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
+          return
+        }
         console.error('Error loading staff data:', error)
         if (error.response?.status !== 200 && error.response?.status !== 404 && error.response?.status !== 401) {
           showError('Failed to load staff data. Please try again.')
         }
       } finally {
-        setIsLoading(false)
+        if (!signal?.aborted) {
+          setIsLoading(false)
+        }
       }
     }
 
     loadData()
-  }, [showError])
+  }, [showError, signal, trackRequest, untrackRequest])
 
   const currentDate = new Date()
   const dateOptions = { 
@@ -51,7 +62,8 @@ const Dashboard = () => {
   const updateStaffAbsentStatus = async (staffId, isAbsentToday) => {
     try {
       await updateStaffAttendance(staffId, { isAbsentToday })
-      const data = await getStaffData()
+      // Refetch with cache bypass to get fresh data
+      const data = await getStaffData(false)
       const mappedData = data.map(staff => ({
         ...staff,
         id: staff._id || staff.id
@@ -79,7 +91,8 @@ const Dashboard = () => {
         isAbsentToday
       })
       
-      const data = await getStaffData()
+      // Refetch with cache bypass to get fresh data
+      const data = await getStaffData(false)
       const mappedData = data.map(staff => ({
         ...staff,
         id: staff._id || staff.id
@@ -95,10 +108,6 @@ const Dashboard = () => {
     staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     staff.role.toLowerCase().includes(searchQuery.toLowerCase())
   )
-
-  if (isLoading) {
-    return <Loader fullScreen text="Loading dashboard..." />
-  }
 
   return (
     <div className={styles.dashboardContainer}>
@@ -142,37 +151,41 @@ const Dashboard = () => {
 
         {/* Staff Cards */}
         <div className={styles.staffList}>
-          {filteredStaff.length > 0 ? (
-            filteredStaff.map((staff) => (
-              <StaffCard 
-                key={staff.id || staff._id} 
-                staff={staff}
-                onAbsentToggle={(isAbsent) => updateStaffAbsentStatus(staff.id || staff._id, isAbsent)}
-                onAbsentDatesUpdate={(absentDates) => updateStaffAbsentDates(staff.id || staff._id, absentDates)}
-              />
-            ))
-          ) : searchQuery ? (
-            <EmptyState
-              icon="🔍"
-              title="No results found"
-              message={`No staff members match "${searchQuery}". Try a different search term.`}
-              variant="compact"
-            />
-          ) : staffData.length === 0 ? (
-            <EmptyState
-              icon="👥"
-              title="No staff members yet"
-              message="Get started by adding your first staff member to manage their attendance and payments."
-              actionLabel="Add Staff Member"
-              onAction={() => navigate('/add')}
-            />
+          {isLoading ? (
+            <Shimmer variant="dashboard" count={3} />
           ) : (
-            <EmptyState
-              icon="🔍"
-              title="No results found"
-              message="Try adjusting your search terms."
-              variant="compact"
-            />
+            filteredStaff.length > 0 ? (
+              filteredStaff.map((staff) => (
+                <StaffCard 
+                  key={staff.id || staff._id} 
+                  staff={staff}
+                  onAbsentToggle={(isAbsent) => updateStaffAbsentStatus(staff.id || staff._id, isAbsent)}
+                  onAbsentDatesUpdate={(absentDates) => updateStaffAbsentDates(staff.id || staff._id, absentDates)}
+                />
+              ))
+            ) : searchQuery ? (
+              <EmptyState
+                icon="🔍"
+                title="No results found"
+                message={`No staff members match "${searchQuery}". Try a different search term.`}
+                variant="compact"
+              />
+            ) : staffData.length === 0 ? (
+              <EmptyState
+                icon="👥"
+                title="No staff members yet"
+                message="Get started by adding your first staff member to manage their attendance and payments."
+                actionLabel="Add Staff Member"
+                onAction={() => navigate('/add')}
+              />
+            ) : (
+              <EmptyState
+                icon="🔍"
+                title="No results found"
+                message="Try adjusting your search terms."
+                variant="compact"
+              />
+            )
           )}
         </div>
 

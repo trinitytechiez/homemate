@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
 import EmptyState from '../../components/EmptyState/EmptyState'
-import Loader from '../../components/Loader'
+import Shimmer from '../../components/Shimmer'
 import { getStaffData } from '../../utils/staffData'
 import { useToast } from '../../contexts/ToastContext'
+import { useRequestCancellation } from '../../utils/useRequestCancellation'
 import styles from './styles.module.scss'
 
 const Staff = () => {
@@ -13,6 +14,7 @@ const Staff = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [staffData, setStaffData] = useState([])
+  const { signal, trackRequest, untrackRequest } = useRequestCancellation()
 
   useEffect(() => {
     const loadData = async () => {
@@ -24,13 +26,20 @@ const Staff = () => {
       }
 
       try {
-        const data = await getStaffData()
-        const mappedData = data.map(staff => ({
-          ...staff,
-          id: staff._id || staff.id
-        }))
-        setStaffData(mappedData)
+        const data = await getStaffData(true, signal, trackRequest, untrackRequest)
+        // Check if component is still mounted and request wasn't cancelled
+        if (!signal?.aborted) {
+          const mappedData = data.map(staff => ({
+            ...staff,
+            id: staff._id || staff.id
+          }))
+          setStaffData(mappedData)
+        }
       } catch (error) {
+        // Don't handle cancelled requests
+        if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
+          return
+        }
         console.error('Error loading staff data:', error)
         if (error.response?.status === 401) {
           navigate('/login', { replace: true })
@@ -42,12 +51,14 @@ const Staff = () => {
           showError('Failed to load staff data. Please try again.')
         }
       } finally {
-        setIsLoading(false)
+        if (!signal?.aborted) {
+          setIsLoading(false)
+        }
       }
     }
 
     loadData()
-  }, [navigate, showError])
+  }, [navigate, showError, signal, trackRequest, untrackRequest])
 
   // Filter staff based on search query
   const filteredStaff = (staffData || []).filter(staff =>
@@ -67,10 +78,6 @@ const Staff = () => {
 
   const handleFilterClick = () => {
     console.log('Filter clicked')
-  }
-
-  if (isLoading) {
-    return <Loader fullScreen text="Loading staff list..." />
   }
 
   return (
@@ -100,52 +107,56 @@ const Staff = () => {
 
         {/* Staff List */}
         <div className={styles.staffList}>
-          {filteredStaff.length > 0 ? (
-            filteredStaff.map((staff) => (
-              <div
-                key={staff.id || staff._id}
-                className={styles.staffCard}
-                onClick={() => handleStaffClick(staff)}
-              >
-                <div className={styles.staffAvatar}>
-                  {staff.avatar ? (
-                    <img src={staff.avatar} alt={staff.name} />
-                  ) : (
-                    <span className={styles.avatarPlaceholder}>
-                      {staff.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <div className={styles.staffInfo}>
-                  <h3 className={styles.staffName}>{staff.name}</h3>
-                  <p className={styles.staffRole}>{staff.role}</p>
-                  <p className={styles.staffLocation}>{staff.location}</p>
-                </div>
-                <div className={styles.arrowIcon}>→</div>
-              </div>
-            ))
-          ) : searchQuery ? (
-            <EmptyState
-              icon="🔍"
-              title="No results found"
-              message={`No staff members match "${searchQuery}". Try a different search term or clear the search.`}
-              variant="compact"
-            />
-          ) : staffData.length === 0 ? (
-            <EmptyState
-              icon="👥"
-              title="No staff members yet"
-              message="Start managing your staff by adding your first team member."
-              actionLabel="Add Staff Member"
-              onAction={() => navigate('/add')}
-            />
+          {isLoading ? (
+            <Shimmer variant="list" count={5} />
           ) : (
-            <EmptyState
-              icon="🔍"
-              title="No results found"
-              message="Try adjusting your search terms."
-              variant="compact"
-            />
+            filteredStaff.length > 0 ? (
+              filteredStaff.map((staff) => (
+                <div
+                  key={staff.id || staff._id}
+                  className={styles.staffCard}
+                  onClick={() => handleStaffClick(staff)}
+                >
+                  <div className={styles.staffAvatar}>
+                    {staff.avatar ? (
+                      <img src={staff.avatar} alt={staff.name} />
+                    ) : (
+                      <span className={styles.avatarPlaceholder}>
+                        {staff.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.staffInfo}>
+                    <h3 className={styles.staffName}>{staff.name}</h3>
+                    <p className={styles.staffRole}>{staff.role}</p>
+                    <p className={styles.staffLocation}>{staff.location}</p>
+                  </div>
+                  <div className={styles.arrowIcon}>→</div>
+                </div>
+              ))
+            ) : searchQuery ? (
+              <EmptyState
+                icon="🔍"
+                title="No results found"
+                message={`No staff members match "${searchQuery}". Try a different search term or clear the search.`}
+                variant="compact"
+              />
+            ) : staffData.length === 0 ? (
+              <EmptyState
+                icon="👥"
+                title="No staff members yet"
+                message="Start managing your staff by adding your first team member."
+                actionLabel="Add Staff Member"
+                onAction={() => navigate('/add')}
+              />
+            ) : (
+              <EmptyState
+                icon="🔍"
+                title="No results found"
+                message="Try adjusting your search terms."
+                variant="compact"
+              />
+            )
           )}
         </div>
       </div>

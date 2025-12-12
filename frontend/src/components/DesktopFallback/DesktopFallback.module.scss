@@ -1,0 +1,39 @@
+@import '../../styles/themes/index';
+
+.desktopFallback {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-primary);
+  padding: 2rem;
+}
+
+.content {
+  text-align: center;
+  max-width: 500px;
+  padding: 3rem 2rem;
+  background-color: var(--bg-card);
+  border-radius: $radius-lg;
+  box-shadow: var(--shadow-xl);
+}
+
+.icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+}
+
+.message {
+  font-size: $font-size-lg;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}

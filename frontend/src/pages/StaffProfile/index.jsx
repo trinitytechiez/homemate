@@ -5,9 +5,10 @@ import { useToast } from '../../contexts/ToastContext'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
 import AttendanceCalendar from '../../components/AttendanceCalendar/AttendanceCalendar'
 import EmptyState from '../../components/EmptyState/EmptyState'
-import Loader from '../../components/Loader'
+import Shimmer from '../../components/Shimmer'
 import { getStaffMember, updateStaffMember, updateStaffAttendance } from '../../utils/staffData'
 import { getCurrencySymbol } from '../../utils/currency'
+import { useRequestCancellation } from '../../utils/useRequestCancellation'
 import styles from './styles.module.scss'
 
 const StaffProfile = () => {
@@ -24,6 +25,8 @@ const StaffProfile = () => {
   
   // Get staff data from location state or fetch from API
   const [staff, setStaff] = useState(location.state?.staff || null)
+
+  const { signal, trackRequest, untrackRequest } = useRequestCancellation()
 
   // Check authentication and load staff data on mount
   useEffect(() => {
@@ -43,13 +46,16 @@ const StaffProfile = () => {
             return
           }
           
-          const staffData = await getStaffMember(id)
-          // Map MongoDB _id to id for compatibility
-          const mappedStaff = {
-            ...staffData,
-            id: staffData._id || staffData.id
+          const staffData = await getStaffMember(id, true, signal, trackRequest, untrackRequest)
+          // Check if component is still mounted and request wasn't cancelled
+          if (!signal?.aborted) {
+            // Map MongoDB _id to id for compatibility
+            const mappedStaff = {
+              ...staffData,
+              id: staffData._id || staffData.id
+            }
+            setStaff(mappedStaff)
           }
-          setStaff(mappedStaff)
         } else {
           // Ensure id is set
           const mappedStaff = {
@@ -59,6 +65,10 @@ const StaffProfile = () => {
           setStaff(mappedStaff)
         }
       } catch (error) {
+        // Don't handle cancelled requests
+        if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
+          return
+        }
         console.error('Error loading staff data:', error)
         if (error.response?.status === 401) {
           navigate('/login', { replace: true })
@@ -68,18 +78,22 @@ const StaffProfile = () => {
           navigate('/staff', { replace: true })
           return
         }
-        openModal({
-          title: 'Error',
-          content: <p>Failed to load staff data. Please try again.</p>,
-          size: 'small'
-        })
+        if (!signal?.aborted) {
+          openModal({
+            title: 'Error',
+            content: <p>Failed to load staff data. Please try again.</p>,
+            size: 'small'
+          })
+        }
       } finally {
-        setIsLoading(false)
+        if (!signal?.aborted) {
+          setIsLoading(false)
+        }
       }
     }
 
     loadData()
-  }, [id, navigate, openModal])
+  }, [id, navigate, openModal, signal, trackRequest, untrackRequest, staff])
 
   const [formData, setFormData] = useState({
     name: staff?.name || '',
@@ -261,12 +275,24 @@ const StaffProfile = () => {
     }
   }
 
-  if (isLoading) {
-    return <Loader fullScreen text="Loading staff profile..." />
-  }
-
   // Show loading or redirect if no staff data
   if (!staff || !staff.id) {
+    if (isLoading) {
+      return (
+        <div className={styles.profileContainer}>
+          <div className={styles.profileContent}>
+            <div className={styles.header}>
+              <button className={styles.backButton} onClick={handleBack}>
+                ←
+              </button>
+              <span className={styles.appName}>home/mate</span>
+            </div>
+            <Shimmer variant="profile" count={1} />
+          </div>
+          <BottomNavigation />
+        </div>
+      )
+    }
     return null // Will redirect via useEffect
   }
 

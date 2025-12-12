@@ -40,13 +40,21 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // If signal is provided, use it for cancellation
+    // Otherwise, create a new AbortController if not already present
+    if (!config.signal && !config.signal?.aborted) {
+      // Signal will be provided by components using useRequestCancellation
+    }
+    
     // Log request in development
     if (import.meta.env.DEV) {
       console.log('📤 API Request:', {
         method: config.method?.toUpperCase(),
         url: config.url,
         baseURL: config.baseURL,
-        fullURL: `${config.baseURL}${config.url}`
+        fullURL: `${config.baseURL}${config.url}`,
+        cancelled: config.signal?.aborted || false
       })
     }
     return config
@@ -71,6 +79,14 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
+    // Don't log or handle cancelled requests
+    if (error.code === 'ERR_CANCELED' || error.message === 'canceled' || error.name === 'AbortError') {
+      if (import.meta.env.DEV) {
+        console.log('🚫 Request cancelled:', error.config?.url)
+      }
+      return Promise.reject(error)
+    }
+    
     // Log error responses
     console.error('📥 API Error Response:', {
       status: error.response?.status,

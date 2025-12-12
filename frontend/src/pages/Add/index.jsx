@@ -4,32 +4,13 @@ import { useModal } from '../../contexts/ModalContext'
 import { useToast } from '../../contexts/ToastContext'
 import { addStaffMember } from '../../utils/staffData'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
-import Loader from '../../components/Loader'
 import styles from './styles.module.scss'
 
 const Add = () => {
   const navigate = useNavigate()
   const { openModal } = useModal()
   const { showError, showSuccess } = useToast()
-  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // Check authentication on mount
-  useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem('token')
-      
-      if (!token || token.trim().length === 0) {
-        navigate('/login', { replace: true })
-        return false
-      }
-      
-      setIsLoading(false)
-      return true
-    }
-
-    checkAuth()
-  }, [navigate])
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -157,9 +138,7 @@ const Add = () => {
     navigate(-1)
   }
 
-  if (isLoading) {
-    return <Loader fullScreen text="Loading..." />
-  }
+  // Loading state is handled inline with form
 
   return (
     <div className={styles.addContainer}>

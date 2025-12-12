@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useModal } from '../../contexts/ModalContext'
 import { useToast } from '../../contexts/ToastContext'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
-import Loader from '../../components/Loader'
+import Shimmer from '../../components/Shimmer'
 import EmptyState from '../../components/EmptyState/EmptyState'
 import api from '../../utils/api'
+import { useRequestCancellation } from '../../utils/useRequestCancellation'
 import styles from './styles.module.scss'
 
 const Profile = () => {
@@ -25,6 +26,8 @@ const Profile = () => {
   const [formData, setFormData] = useState(profile)
   const [errors, setErrors] = useState({})
 
+  const { signal, trackRequest, untrackRequest } = useRequestCancellation()
+
   // Check authentication and load profile data on mount
   useEffect(() => {
     const loadProfile = async () => {
@@ -35,37 +38,57 @@ const Profile = () => {
         return
       }
 
+      const requestId = `getProfile-${Date.now()}-${Math.random()}`
+      
+      // Track this request as ongoing
+      trackRequest(requestId)
+
       try {
-        const response = await api.get('/user/profile')
-        const userData = response.data.user
-        const profileData = {
-          name: userData.name || '',
-          location: userData.location || '',
-          phoneNumber: userData.phoneNumber || '',
-          email: userData.email || '',
-          dob: userData.dob || '',
-          avatar: userData.avatar || null
+        const response = await api.get('/user/profile', { signal })
+        // Untrack when request completes successfully
+        untrackRequest(requestId)
+        // Check if component is still mounted and request wasn't cancelled
+        if (!signal?.aborted) {
+          const userData = response.data.user
+          const profileData = {
+            name: userData.name || '',
+            location: userData.location || '',
+            phoneNumber: userData.phoneNumber || '',
+            email: userData.email || '',
+            dob: userData.dob || '',
+            avatar: userData.avatar || null
+          }
+          setProfile(profileData)
+          setFormData(profileData)
         }
-        setProfile(profileData)
-        setFormData(profileData)
       } catch (error) {
+        // Untrack when request fails or is cancelled
+        untrackRequest(requestId)
+        // Don't handle cancelled requests
+        if (error.code === 'ERR_CANCELED' || error.name === 'AbortError') {
+          return
+        }
         console.error('Error loading profile:', error)
         if (error.response?.status === 401) {
           navigate('/login', { replace: true })
           return
         }
-        openModal({
-          title: 'Error',
-          content: <p>Failed to load profile. Please try again.</p>,
-          size: 'small'
-        })
+        if (!signal?.aborted) {
+          openModal({
+            title: 'Error',
+            content: <p>Failed to load profile. Please try again.</p>,
+            size: 'small'
+          })
+        }
       } finally {
-        setIsLoading(false)
+        if (!signal?.aborted) {
+          setIsLoading(false)
+        }
       }
     }
 
     loadProfile()
-  }, [navigate, openModal])
+  }, [navigate, openModal, signal, trackRequest, untrackRequest])
 
   useEffect(() => {
     setFormData(profile)
@@ -172,11 +195,6 @@ const Profile = () => {
     }
   }
 
-  // Show loader while checking authentication
-  if (isLoading) {
-    return <Loader fullScreen text="Loading profile..." />
-  }
-
   return (
     <div className={`${styles.profileContainer} ${isEditing ? styles.editing : ''}`}>
       <div className={styles.profileContent}>
@@ -185,9 +203,13 @@ const Profile = () => {
           <h1 className={styles.appTitle}>home/mate</h1>
         </header>
 
-        {/* Profile Section */}
-        <div className={styles.profileSection}>
-          <div className={styles.avatar}>
+        {isLoading ? (
+          <Shimmer variant="profile" count={1} />
+        ) : (
+          <>
+            {/* Profile Section */}
+            <div className={styles.profileSection}>
+              <div className={styles.avatar}>
             {profile.avatar ? (
               <img src={profile.avatar} alt={profile.name || 'User'} />
             ) : (
@@ -298,6 +320,8 @@ const Profile = () => {
           <button className={styles.editButton} onClick={handleEdit}>
             Edit info
           </button>
+        )}
+          </>
         )}
       </div>
 
