@@ -78,6 +78,7 @@ export const clearAllCache = () => {
 /**
  * Get or create pending request promise
  * Prevents duplicate simultaneous requests
+ * Exported for use in staffData.js
  */
 export const getOrCreateRequest = (key, requestFn) => {
   // If request is already pending, return the existing promise

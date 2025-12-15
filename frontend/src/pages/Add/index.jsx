@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useModal } from '../../contexts/ModalContext'
 import { useToast } from '../../contexts/ToastContext'
 import { addStaffMember } from '../../utils/staffData'
+import { validateMobileNumber, validateRequired, validateName } from '../../utils/validation'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
 import styles from './styles.module.scss'
 
@@ -49,23 +50,17 @@ const Add = () => {
   const validateForm = () => {
     const newErrors = {}
     
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First Name is required'
-    }
+    const firstNameError = validateName(formData.firstName, 'First Name')
+    if (firstNameError) newErrors.firstName = firstNameError
     
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last Name is required'
-    }
+    const lastNameError = validateName(formData.lastName, 'Last Name')
+    if (lastNameError) newErrors.lastName = lastNameError
     
-    if (!formData.mobileNumber.trim()) {
-      newErrors.mobileNumber = 'Mobile Number is required'
-    } else if (formData.mobileNumber.length !== 10) {
-      newErrors.mobileNumber = 'Mobile Number must be 10 digits'
-    }
+    const mobileError = validateMobileNumber(formData.mobileNumber)
+    if (mobileError) newErrors.mobileNumber = mobileError
     
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required'
-    }
+    const locationError = validateRequired(formData.location, 'Location')
+    if (locationError) newErrors.location = locationError
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -154,7 +149,7 @@ const Add = () => {
           
           <form className={styles.addForm}>
             <div className={styles.formGroup}>
-              <label htmlFor="firstName" className={styles.label}>
+              <label htmlFor="firstName" className={`${styles.label} ${errors.firstName ? styles.labelError : ''}`}>
                 First Name<span className={styles.required}>*</span>
               </label>
               <input
@@ -171,7 +166,7 @@ const Add = () => {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="lastName" className={styles.label}>
+              <label htmlFor="lastName" className={`${styles.label} ${errors.lastName ? styles.labelError : ''}`}>
                 Last Name<span className={styles.required}>*</span>
               </label>
               <input
@@ -188,7 +183,7 @@ const Add = () => {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="mobileNumber" className={styles.label}>
+              <label htmlFor="mobileNumber" className={`${styles.label} ${errors.mobileNumber ? styles.labelError : ''}`}>
                 Mobile No.<span className={styles.required}>*</span>
               </label>
               <input
@@ -208,7 +203,7 @@ const Add = () => {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="location" className={styles.label}>
+              <label htmlFor="location" className={`${styles.label} ${errors.location ? styles.labelError : ''}`}>
                 Location<span className={styles.required}>*</span>
               </label>
               <input

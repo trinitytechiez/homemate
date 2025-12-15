@@ -1,23 +1,26 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useMemo, memo } from 'react'
 import styles from './BottomNavigation.module.scss'
 
-const BottomNavigation = () => {
+const BottomNavigation = memo(() => {
   const location = useLocation()
 
-  const navItems = [
+  const navItems = useMemo(() => [
     { path: '/dashboard', icon: '🏠', label: 'Home' },
     { path: '/staff', icon: '👥', label: 'Staff' },
     { path: '/add', icon: '➕', label: 'Add' },
     { path: '/settings', icon: '⚙️', label: 'Settings' },
     { path: '/profile', icon: '👤', label: 'Profile' }
-  ]
+  ], [])
 
-  const isActive = (path) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/dashboard'
+  const isActive = useMemo(() => {
+    return (path) => {
+      if (path === '/dashboard') {
+        return location.pathname === '/dashboard'
+      }
+      return location.pathname.startsWith(path)
     }
-    return location.pathname.startsWith(path)
-  }
+  }, [location.pathname])
 
   return (
     <nav className={styles.bottomNav}>
@@ -33,7 +36,9 @@ const BottomNavigation = () => {
       ))}
     </nav>
   )
-}
+})
+
+BottomNavigation.displayName = 'BottomNavigation'
 
 export default BottomNavigation
 

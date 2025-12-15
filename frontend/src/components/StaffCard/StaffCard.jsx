@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useModal } from '../../contexts/ModalContext'
 import AttendanceCalendar from '../AttendanceCalendar/AttendanceCalendar'
 import { getCurrencySymbol } from '../../utils/currency'
 import styles from './StaffCard.module.scss'
 
-const StaffCard = ({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
+const StaffCard = memo(({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
   const [isAbsent, setIsAbsent] = useState(staff.isAbsentToday || false)
   const { openModal } = useModal()
   const navigate = useNavigate()
@@ -23,7 +23,8 @@ const StaffCard = ({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
     absentDates = []
   } = staff
   
-  const absentDatesSet = new Set(absentDates)
+  // Memoize absentDatesSet to avoid recreating on every render
+  const absentDatesSet = useMemo(() => new Set(absentDates), [absentDates])
   
   useEffect(() => {
     if (staff.isAbsentToday !== undefined) {
@@ -31,14 +32,16 @@ const StaffCard = ({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
     }
   }, [staff.isAbsentToday])
 
-  const handleAbsentToggle = () => {
+  // Memoize formatDateKey function
+  const formatDateKey = useCallback((year, month, day) => {
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  }, [])
+
+  const handleAbsentToggle = useCallback(() => {
     const newAbsentStatus = !isAbsent
     setIsAbsent(newAbsentStatus)
     
     const today = new Date()
-    const formatDateKey = (year, month, day) => {
-      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    }
     const todayKey = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate())
     const newAbsentDates = new Set(absentDatesSet)
     
@@ -54,9 +57,9 @@ const StaffCard = ({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
     if (onAbsentDatesUpdate) {
       onAbsentDatesUpdate(newAbsentDates)
     }
-  }
+  }, [isAbsent, absentDatesSet, formatDateKey, onAbsentToggle, onAbsentDatesUpdate])
 
-  const handlePhoneClick = () => {
+  const handlePhoneClick = useCallback(() => {
     if (phoneNumber) {
       // Open phone dialer
       window.location.href = `tel:${phoneNumber}`
@@ -67,9 +70,9 @@ const StaffCard = ({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
         size: 'small'
       })
     }
-  }
+  }, [phoneNumber, name, openModal])
 
-  const handleCalendarClick = () => {
+  const handleCalendarClick = useCallback(() => {
     // Open attendance calendar modal
     openModal({
       title: `Attendance log: ${name}`,
@@ -83,7 +86,14 @@ const StaffCard = ({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
       ),
       size: 'large'
     })
-  }
+  }, [name, staff.id, staff._id, absentDatesSet, onAbsentDatesUpdate, openModal])
+
+  const handleNameClick = useCallback(() => {
+    navigate(`/staff/${staff.id || staff._id}`, { state: { staff } })
+  }, [navigate, staff])
+
+  // Memoize currency symbol
+  const currencySymbol = useMemo(() => getCurrencySymbol(currency || 'INR'), [currency])
 
   return (
     <div className={styles.staffCard}>
@@ -101,10 +111,7 @@ const StaffCard = ({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
           <div className={styles.staffDetails}>
             <h3 
               className={styles.staffName}
-              onClick={() => {
-                // Navigate to staff profile
-                navigate(`/staff/${staff.id || staff._id}`, { state: { staff } })
-              }}
+              onClick={handleNameClick}
               style={{ cursor: 'pointer' }}
             >
               {name}
@@ -133,7 +140,7 @@ const StaffCard = ({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
       <div className={styles.cardBody}>
             <div className={styles.infoRow}>
               <span className={styles.infoLabel}>Pay till today:</span>
-              <span className={styles.infoValue}>{getCurrencySymbol(currency || 'INR')} {payTillToday}</span>
+              <span className={styles.infoValue}>{currencySymbol} {payTillToday}</span>
             </div>
         <div className={styles.infoRow}>
           <span className={styles.infoLabel}>Leaves till today:</span>
@@ -141,7 +148,7 @@ const StaffCard = ({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
         </div>
             <div className={styles.infoRow}>
               <span className={styles.infoText}>
-                Monthly salary: {getCurrencySymbol(currency || 'INR')} {monthlySalary} | Paid leaves: {paidLeaves}
+                Monthly salary: {currencySymbol} {monthlySalary} | Paid leaves: {paidLeaves}
               </span>
             </div>
       </div>
@@ -154,7 +161,20 @@ const StaffCard = ({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
       </button>
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison function for memo
+  return (
+    prevProps.staff.id === nextProps.staff.id &&
+    prevProps.staff.isAbsentToday === nextProps.staff.isAbsentToday &&
+    prevProps.staff.name === nextProps.staff.name &&
+    prevProps.staff.role === nextProps.staff.role &&
+    JSON.stringify(prevProps.staff.absentDates) === JSON.stringify(nextProps.staff.absentDates) &&
+    prevProps.onAbsentToggle === nextProps.onAbsentToggle &&
+    prevProps.onAbsentDatesUpdate === nextProps.onAbsentDatesUpdate
+  )
+})
+
+StaffCard.displayName = 'StaffCard'
 
 export default StaffCard
 

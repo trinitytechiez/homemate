@@ -7,8 +7,10 @@ import AttendanceCalendar from '../../components/AttendanceCalendar/AttendanceCa
 import EmptyState from '../../components/EmptyState/EmptyState'
 import Shimmer from '../../components/Shimmer'
 import { getStaffMember, updateStaffMember, updateStaffAttendance } from '../../utils/staffData'
+import { getCachedData } from '../../utils/apiCache'
 import { getCurrencySymbol } from '../../utils/currency'
 import { useRequestCancellation } from '../../utils/useRequestCancellation'
+import { validateMobileNumber, validateRequired, validateName } from '../../utils/validation'
 import styles from './styles.module.scss'
 
 const StaffProfile = () => {
@@ -30,37 +32,55 @@ const StaffProfile = () => {
 
   // Check authentication and load staff data on mount
   useEffect(() => {
+    const token = localStorage.getItem('token')
+    
+    if (!token || token.trim().length === 0) {
+      navigate('/login', { replace: true })
+      return
+    }
+
+    // If staff data is already in location state, use it immediately (no loading)
+    if (staff && staff.id) {
+      const mappedStaff = {
+        ...staff,
+        id: staff._id || staff.id
+      }
+      setStaff(mappedStaff)
+      setIsLoading(false)
+      return
+    }
+
+    // If no staff data, show loading and fetch
+    if (!id) {
+      navigate('/staff', { replace: true })
+      return
+    }
+
     const loadData = async () => {
-      const token = localStorage.getItem('token')
-      
-      if (!token || token.trim().length === 0) {
-        navigate('/login', { replace: true })
+      // Check cache synchronously first
+      const cached = getCachedData(`/staff/${id}`, {}, 30 * 1000)
+      if (cached !== null) {
+        // If cached, use it immediately without loading state
+        const mappedStaff = {
+          ...cached,
+          id: cached._id || cached.id
+        }
+        setStaff(mappedStaff)
+        setIsLoading(false)
         return
       }
 
+      // If not cached, show shimmer and fetch
+      setIsLoading(true)
+
       try {
-        // If staff data is not in location state, fetch from API
-        if (!staff || !staff.id) {
-          if (!id) {
-            navigate('/staff', { replace: true })
-            return
-          }
-          
-          const staffData = await getStaffMember(id, true, signal, trackRequest, untrackRequest)
-          // Check if component is still mounted and request wasn't cancelled
-          if (!signal?.aborted) {
-            // Map MongoDB _id to id for compatibility
-            const mappedStaff = {
-              ...staffData,
-              id: staffData._id || staffData.id
-            }
-            setStaff(mappedStaff)
-          }
-        } else {
-          // Ensure id is set
+        const staffData = await getStaffMember(id, true, signal, trackRequest, untrackRequest)
+        // Check if component is still mounted and request wasn't cancelled
+        if (!signal?.aborted) {
+          // Map MongoDB _id to id for compatibility
           const mappedStaff = {
-            ...staff,
-            id: staff._id || staff.id
+            ...staffData,
+            id: staffData._id || staffData.id
           }
           setStaff(mappedStaff)
         }
@@ -206,6 +226,7 @@ const StaffProfile = () => {
       ...prev,
       [name]: value
     }))
+    // Reset error when field changes
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -214,23 +235,32 @@ const StaffProfile = () => {
     }
   }
 
+  const handleMobileChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10)
+    setFormData(prev => ({ ...prev, phoneNumber: value }))
+    // Reset error when field changes
+    if (errors.phoneNumber) {
+      setErrors(prev => ({ ...prev, phoneNumber: '' }))
+    }
+  }
+
   const handleSave = async () => {
     const newErrors = {}
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required'
-    }
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Mobile number is required'
-    }
-    if (!formData.role.trim()) {
-      newErrors.role = 'Category is required'
-    }
-    if (!formData.monthlySalary) {
-      newErrors.monthlySalary = 'Pay is required'
-    }
+    
+    const nameError = validateName(formData.name, 'Name')
+    if (nameError) newErrors.name = nameError
+    
+    const locationError = validateRequired(formData.location, 'Location')
+    if (locationError) newErrors.location = locationError
+    
+    const phoneError = validateMobileNumber(formData.phoneNumber)
+    if (phoneError) newErrors.phoneNumber = phoneError
+    
+    const roleError = validateRequired(formData.role, 'Category')
+    if (roleError) newErrors.role = roleError
+    
+    const salaryError = validateRequired(formData.monthlySalary, 'Pay')
+    if (salaryError) newErrors.monthlySalary = salaryError
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
@@ -342,7 +372,7 @@ const StaffProfile = () => {
         <div className={styles.detailsSection}>
           <h2 className={styles.sectionTitle}>Personal details</h2>
           <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Name</span>
+            <span className={`${styles.detailLabel} ${errors.name ? styles.labelError : ''}`}>Name</span>
             {isEditing ? (
               <input
                 type="text"
@@ -357,7 +387,7 @@ const StaffProfile = () => {
             {errors.name && <span className={styles.errorText}>{errors.name}</span>}
           </div>
           <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Location</span>
+            <span className={`${styles.detailLabel} ${errors.location ? styles.labelError : ''}`}>Location</span>
             {isEditing ? (
               <input
                 type="text"
@@ -372,7 +402,7 @@ const StaffProfile = () => {
             {errors.location && <span className={styles.errorText}>{errors.location}</span>}
           </div>
           <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Mobile no.</span>
+            <span className={`${styles.detailLabel} ${errors.phoneNumber ? styles.labelError : ''}`}>Mobile no.</span>
             {isEditing ? (
               <input
                 type="tel"
@@ -380,7 +410,7 @@ const StaffProfile = () => {
                 pattern="[0-9]*"
                 name="phoneNumber"
                 value={formData.phoneNumber}
-                onChange={handleChange}
+                onChange={handleMobileChange}
                 className={`${styles.detailInput} ${errors.phoneNumber ? styles.inputError : ''}`}
                 maxLength={10}
               />
@@ -411,7 +441,7 @@ const StaffProfile = () => {
         <div className={styles.detailsSection}>
           <h2 className={styles.sectionTitle}>Work details</h2>
           <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Category</span>
+            <span className={`${styles.detailLabel} ${errors.role ? styles.labelError : ''}`}>Category</span>
             {isEditing ? (
               <input
                 type="text"
@@ -426,7 +456,7 @@ const StaffProfile = () => {
             {errors.role && <span className={styles.errorText}>{errors.role}</span>}
           </div>
           <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Salary</span>
+            <span className={`${styles.detailLabel} ${errors.monthlySalary ? styles.labelError : ''}`}>Salary</span>
             {isEditing ? (
               <div className={styles.salaryInputGroup}>
                 <select

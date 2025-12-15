@@ -52,6 +52,11 @@
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--dark-color);
+  transition: color var(--transition);
+}
+
+.labelError {
+  color: var(--danger-color);
 }
 
 .required {

@@ -1,65 +1,135 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback, useLayoutEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Shimmer from '../../components/Shimmer'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
 import StaffCard from '../../components/StaffCard/StaffCard'
 import { EmptyState } from '../../common/components'
 import { getStaffData, updateStaffAttendance } from '../../utils/staffData'
+import { getCachedData } from '../../utils/apiCache'
 import { useToast } from '../../contexts/ToastContext'
 import { useRequestCancellation } from '../../utils/useRequestCancellation'
+import { useDebounce } from '../../utils/useDebounce'
 import styles from './styles.module.scss'
 
 const Dashboard = () => {
-  const [isLoading, setIsLoading] = useState(true)
-  const [viewMode, setViewMode] = useState('monthly') // 'monthly' or 'weekly'
-  const [searchQuery, setSearchQuery] = useState('')
-  const [staffData, setStaffData] = useState([])
   const navigate = useNavigate()
   const { showError } = useToast()
   const { signal, trackRequest, untrackRequest } = useRequestCancellation()
+  
+  const [viewMode, setViewMode] = useState('monthly') // 'monthly' or 'weekly'
+  const [searchQuery, setSearchQuery] = useState('')
+  const [staffData, setStaffData] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Check cache synchronously on every mount and update state immediately
+  useLayoutEffect(() => {
+    const cached = getCachedData('/staff', {}, 10 * 1000)
+    if (cached !== null) {
+      // If cached, use it immediately without loading state
+      const mappedData = cached.map(staff => ({
+        ...staff,
+        id: staff._id || staff.id
+      }))
+      setStaffData(mappedData)
+      setIsLoading(false)
+    } else {
+      // If not cached, show shimmer
+      setIsLoading(true)
+    }
+  }, []) // Run on every mount
 
   useEffect(() => {
+    console.log('📊 Dashboard: useEffect triggered', { 
+      signalAborted: signal?.aborted,
+      hasSignal: !!signal 
+    })
+    
+    let isMounted = true
+    let hasCalled = false // Prevent double calls in StrictMode
+
     const loadData = async () => {
+      // Prevent duplicate calls (React StrictMode causes double renders)
+      if (hasCalled) {
+        console.log('📊 Dashboard: loadData already called, skipping duplicate')
+        return
+      }
+      hasCalled = true
+      
+      console.log('📊 Dashboard: loadData called')
       try {
-        const data = await getStaffData(true, signal, trackRequest, untrackRequest)
+        // Always fetch from API (bypass cache) to get fresh data
+        console.log('📊 Dashboard: Calling getStaffData with useCache=false')
+        const data = await getStaffData(false, signal, trackRequest, untrackRequest)
+        console.log('📊 Dashboard: Received data', data)
         // Check if component is still mounted and request wasn't cancelled
-        if (!signal?.aborted) {
+        if (isMounted && !signal?.aborted) {
           const mappedData = data.map(staff => ({
             ...staff,
             id: staff._id || staff.id
           }))
           setStaffData(mappedData)
+          setIsLoading(false)
+          console.log('📊 Dashboard: Data set, loading false')
+        } else {
+          console.log('📊 Dashboard: Skipping state update', { isMounted, signalAborted: signal?.aborted })
         }
       } catch (error) {
         // Don't handle cancelled requests
         if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
+          console.log('📊 Dashboard: Request was cancelled')
           return
         }
-        console.error('Error loading staff data:', error)
+        console.error('📊 Dashboard: Error loading staff data:', error)
         if (error.response?.status !== 200 && error.response?.status !== 404 && error.response?.status !== 401) {
           showError('Failed to load staff data. Please try again.')
         }
-      } finally {
-        if (!signal?.aborted) {
+        if (isMounted && !signal?.aborted) {
           setIsLoading(false)
         }
       }
     }
 
+    // Always call API to refresh data
     loadData()
-  }, [showError, signal, trackRequest, untrackRequest])
 
-  const currentDate = new Date()
-  const dateOptions = { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric', 
-    weekday: 'long' 
-  }
-  const formattedDate = currentDate.toLocaleDateString('en-IN', dateOptions)
-  const monthName = currentDate.toLocaleDateString('en-IN', { month: 'long' })
+    return () => {
+      console.log('📊 Dashboard: Cleanup - unmounting')
+      isMounted = false
+    }
+  }, []) // Only run once on mount
 
-  const updateStaffAbsentStatus = async (staffId, isAbsentToday) => {
+  // Memoize date formatting to avoid recalculation on every render
+  const { formattedDate, monthName } = useMemo(() => {
+    const currentDate = new Date()
+    const dateOptions = { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric', 
+      weekday: 'long' 
+    }
+    return {
+      formattedDate: currentDate.toLocaleDateString('en-IN', dateOptions),
+      monthName: currentDate.toLocaleDateString('en-IN', { month: 'long' })
+    }
+  }, []) // Only calculate once on mount
+
+  // Debounce search query to avoid filtering on every keystroke
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
+  // Memoize filtered staff to avoid recalculation on every render
+  const filteredStaff = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) {
+      return staffData
+    }
+    const query = debouncedSearchQuery.toLowerCase()
+    return staffData.filter(staff =>
+      staff.name.toLowerCase().includes(query) ||
+      staff.role.toLowerCase().includes(query)
+    )
+  }, [staffData, debouncedSearchQuery])
+
+  // Memoize update handlers to prevent unnecessary re-renders
+  const updateStaffAbsentStatus = useCallback(async (staffId, isAbsentToday) => {
     try {
       await updateStaffAttendance(staffId, { isAbsentToday })
       // Refetch with cache bypass to get fresh data
@@ -73,9 +143,9 @@ const Dashboard = () => {
       console.error('Error updating absent status:', error)
       showError('Failed to update attendance. Please try again.')
     }
-  }
+  }, [showError])
 
-  const updateStaffAbsentDates = async (staffId, absentDatesSet) => {
+  const updateStaffAbsentDates = useCallback(async (staffId, absentDatesSet) => {
     try {
       const absentDatesArray = Array.from(absentDatesSet)
       
@@ -102,12 +172,7 @@ const Dashboard = () => {
       console.error('Error updating absent dates:', error)
       showError('Failed to update attendance. Please try again.')
     }
-  }
-
-  const filteredStaff = staffData.filter(staff =>
-    staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    staff.role.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  }, [showError])
 
   return (
     <div className={styles.dashboardContainer}>

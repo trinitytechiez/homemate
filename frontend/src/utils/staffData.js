@@ -1,35 +1,71 @@
 // API utility for staff data - replaces localStorage-based storage
 import api from './api'
-import { cachedRequest, invalidateCachePattern, getCachedData } from './apiCache'
+import { cachedRequest, invalidateCachePattern, getCachedData, getOrCreateRequest, setCachedData } from './apiCache'
+
+// Helper to generate cache key (same as in apiCache)
+const getCacheKey = (url, params = {}) => {
+  const sortedParams = Object.keys(params)
+    .sort()
+    .map(key => `${key}=${params[key]}`)
+    .join('&')
+  return `${url}${sortedParams ? `?${sortedParams}` : ''}`
+}
 
 // Get all staff data from API with caching
 export const getStaffData = async (useCache = true, signal = null, trackRequest = null, untrackRequest = null) => {
   const requestId = `getStaffData-${Date.now()}-${Math.random()}`
   
   const requestFn = async () => {
-    // Only make request if signal is not already aborted (prevents unnecessary requests)
-    if (signal?.aborted) {
-      if (untrackRequest) untrackRequest(requestId)
-      throw new Error('Request cancelled')
+    console.log('🔄 getStaffData requestFn: Starting API call', { 
+      signalAborted: signal?.aborted,
+      hasSignal: !!signal,
+      requestId 
+    })
+
+    // Track this request as ongoing FIRST, before making the API call
+    // This ensures the request is tracked before any cancellation can happen
+    if (trackRequest) {
+      console.log('📝 getStaffData: Tracking request', requestId)
+      trackRequest(requestId)
     }
 
-    // Track this request as ongoing
-    if (trackRequest) trackRequest(requestId)
+    // Don't check signal.aborted here - let the API call proceed
+    // The axios call will handle abort properly, and we want to allow
+    // requests to complete even if signal was briefly aborted during route changes
+    if (signal?.aborted) {
+      console.log('⚠️ getStaffData: Signal appears aborted, but proceeding (may be from old route)')
+    }
 
     try {
+      console.log('🌐 getStaffData: Making API call to /staff', { 
+        hasSignal: !!signal,
+        signalAborted: signal?.aborted 
+      })
       const response = await api.get('/staff', { signal })
+      console.log('✅ getStaffData: API call successful', response.data)
       // Untrack when request completes successfully
-      if (untrackRequest) untrackRequest(requestId)
+      if (untrackRequest) {
+        console.log('✅ getStaffData: Untracking request', requestId)
+        untrackRequest(requestId)
+      }
       // Return empty array if no staff data (valid case)
       return response.data.staff || []
     } catch (error) {
       // Untrack when request fails or is cancelled
-      if (untrackRequest) untrackRequest(requestId)
+      if (untrackRequest) {
+        console.log('❌ getStaffData: Untracking request due to error', requestId)
+        untrackRequest(requestId)
+      }
       // Don't log cancelled requests - they're expected when route changes
       if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
+        console.log('🚫 getStaffData: Request was cancelled', {
+          code: error.code,
+          name: error.name,
+          message: error.message
+        })
         throw error
       }
-      console.error('Error fetching staff data:', error)
+      console.error('❌ getStaffData: Error fetching staff data:', error)
       if (error.response?.status === 401) {
         // Token expired or invalid, will be handled by interceptor
         throw error
@@ -43,12 +79,25 @@ export const getStaffData = async (useCache = true, signal = null, trackRequest 
     }
   }
 
+  // Always use request deduplication to prevent duplicate calls
+  const cacheKey = getCacheKey('/staff', {})
+  
   if (useCache) {
-    // Check cache first - if cached, return immediately without making request
+    // Check cache first synchronously - if cached, return immediately without making request
     // Cached responses don't need tracking since they're not ongoing requests
     const cached = getCachedData('/staff', {}, 10 * 1000)
     if (cached !== null) {
-      return cached
+      // Return cached data immediately (synchronously wrapped in Promise)
+      // But still make API call in background to refresh cache
+      // Fire and forget - don't wait for it
+      setTimeout(() => {
+        if (!signal?.aborted) {
+          cachedRequest('/staff', {}, requestFn, 10 * 1000).catch(() => {
+            // Silently fail background refresh
+          })
+        }
+      }, 0)
+      return Promise.resolve(cached)
     }
     
     // Only make request if not cached and not already cancelled
@@ -57,10 +106,31 @@ export const getStaffData = async (useCache = true, signal = null, trackRequest 
     }
     
     // Cache for 10 seconds for staff list (frequently updated)
-    return cachedRequest('/staff', {}, requestFn, 10 * 1000)
+    // Use deduplication to prevent duplicate calls
+    return getOrCreateRequest(cacheKey, async () => {
+      try {
+        const data = await requestFn()
+        // Cache the result
+        setCachedData('/staff', {}, data, 10 * 1000)
+        return data
+      } catch (error) {
+        throw error
+      }
+    })
   }
   
-  return requestFn()
+  // Bypass cache - always make API call, but use deduplication to prevent duplicates
+  console.log('🔄 getStaffData: Bypassing cache, making API call (with deduplication)')
+  return getOrCreateRequest(cacheKey, async () => {
+    try {
+      const data = await requestFn()
+      // Still cache the result even when bypassing cache check
+      setCachedData('/staff', {}, data, 10 * 1000)
+      return data
+    } catch (error) {
+      throw error
+    }
+  })
 }
 
 // Save staff data (for bulk updates if needed)
@@ -158,10 +228,11 @@ export const getStaffMember = async (staffId, useCache = true, signal = null, tr
   }
 
   if (useCache) {
-    // Check cache first - if cached, return immediately without making request
+    // Check cache first synchronously - if cached, return immediately without making request
     const cached = getCachedData(`/staff/${staffId}`, {}, 30 * 1000)
     if (cached !== null) {
-      return cached
+      // Return cached data immediately (synchronously)
+      return Promise.resolve(cached)
     }
     
     // Only make request if not cached and not already cancelled

@@ -1,6 +1,7 @@
 import express from 'express'
 import { body } from 'express-validator'
 import User from '../models/User.model.js'
+import Otp from '../models/Otp.model.js'
 import { getAuthService } from '../services/auth.service.js'
 import { isMongoConnected } from '../utils/db.utils.js'
 import { checkValidation } from '../utils/validation.utils.js'
@@ -9,6 +10,84 @@ import { formatUserResponse } from '../utils/auth.utils.js'
 
 const router = express.Router()
 
+// Send email OTP for registration
+router.post(
+  '/send-email-otp',
+  [
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Please provide a valid email')
+  ],
+  async (req, res) => {
+    try {
+      if (!checkValidation(req, res)) return
+
+      const { email } = req.body
+      const authService = getAuthService()
+
+      // Check if user already exists
+      const existingUser = await authService.findUserByEmail(email)
+      if (existingUser) {
+        return sendErrorResponse(res, 400, 'User with this email already exists')
+      }
+
+      const { emailOtpService } = await import('../services/emailOtp.service.js')
+      const result = await emailOtpService.sendOTP(email)
+
+      return sendSuccessResponse(res, 200, result.message, {
+        expiresIn: result.expiresIn
+      })
+    } catch (error) {
+      console.error('Send Email OTP error:', error)
+      return sendErrorResponse(res, 500, error.message || 'Failed to send OTP. Please try again.', error)
+    }
+  }
+)
+
+// Verify email OTP and complete registration
+router.post(
+  '/verify-email-otp',
+  [
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Please provide a valid email'),
+    body('otp')
+      .trim()
+      .isLength({ min: 4, max: 4 })
+      .withMessage('OTP must be 4 digits')
+      .isNumeric()
+      .withMessage('OTP must be numeric')
+  ],
+  async (req, res) => {
+    try {
+      if (!checkValidation(req, res)) return
+
+      const { email, otp } = req.body
+      const { emailOtpService } = await import('../services/emailOtp.service.js')
+      
+      const result = await emailOtpService.verifyOTP(email, otp)
+
+      if (!result.success) {
+        return res.status(400).json({
+          message: result.message,
+          attemptsRemaining: result.attemptsRemaining
+        })
+      }
+
+      return sendSuccessResponse(res, 200, 'Email verified successfully', {
+        email,
+        verified: true
+      })
+    } catch (error) {
+      console.error('Verify Email OTP error:', error)
+      return sendErrorResponse(res, 500, error.message || 'Failed to verify OTP. Please try again.', error)
+    }
+  }
+)
+
+// Complete registration after email verification
 router.post(
   '/register',
   [
@@ -31,6 +110,21 @@ router.post(
       const { name, email, password, phoneNumber, location } = req.body
       const authService = getAuthService()
 
+      // Verify email was verified via OTP
+      const { emailOtpService } = await import('../services/emailOtp.service.js')
+      const otpRecord = await Otp.findOne({ email, verified: true }).sort({ createdAt: -1 })
+      
+      if (!otpRecord) {
+        return sendErrorResponse(res, 400, 'Email not verified. Please verify your email first.')
+      }
+
+      // Check if OTP verification was recent (within last 10 minutes)
+      const verificationTime = new Date(otpRecord.updatedAt || otpRecord.createdAt)
+      const timeDiff = Date.now() - verificationTime.getTime()
+      if (timeDiff > 10 * 60 * 1000) {
+        return sendErrorResponse(res, 400, 'Email verification expired. Please verify your email again.')
+      }
+
       const existingUser = await authService.findUserByEmail(email)
       if (existingUser) {
         return sendErrorResponse(res, 400, 'User with this email already exists')
@@ -43,6 +137,9 @@ router.post(
         phoneNumber: phoneNumber || '',
         location: location || ''
       })
+
+      // Delete the verified OTP record
+      await Otp.deleteOne({ _id: otpRecord._id })
 
       const token = authService.generateToken(authService.getUserId(user))
       const userResponse = formatUserResponse(user)
@@ -63,6 +160,34 @@ router.post(
       }
       
       return sendErrorResponse(res, 500, 'Server error during registration', error)
+    }
+  }
+)
+
+// Resend email OTP
+router.post(
+  '/resend-email-otp',
+  [
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Please provide a valid email')
+  ],
+  async (req, res) => {
+    try {
+      if (!checkValidation(req, res)) return
+
+      const { email } = req.body
+      const { emailOtpService } = await import('../services/emailOtp.service.js')
+      
+      const result = await emailOtpService.resendOTP(email)
+
+      return sendSuccessResponse(res, 200, result.message, {
+        expiresIn: result.expiresIn
+      })
+    } catch (error) {
+      console.error('Resend Email OTP error:', error)
+      return sendErrorResponse(res, 500, error.message || 'Failed to resend OTP. Please try again.', error)
     }
   }
 )

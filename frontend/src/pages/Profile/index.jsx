@@ -7,6 +7,7 @@ import Shimmer from '../../components/Shimmer'
 import EmptyState from '../../components/EmptyState/EmptyState'
 import api from '../../utils/api'
 import { useRequestCancellation } from '../../utils/useRequestCancellation'
+import { validateMobileNumber, validateEmail, validateRequired, validateName } from '../../utils/validation'
 import styles from './styles.module.scss'
 
 const Profile = () => {
@@ -30,14 +31,18 @@ const Profile = () => {
 
   // Check authentication and load profile data on mount
   useEffect(() => {
-    const loadProfile = async () => {
-      const token = localStorage.getItem('token')
-      
-      if (!token || token.trim().length === 0) {
-        navigate('/login', { replace: true })
-        return
-      }
+    const token = localStorage.getItem('token')
+    
+    if (!token || token.trim().length === 0) {
+      navigate('/login', { replace: true })
+      return
+    }
 
+    let isMounted = true
+
+    const loadProfile = async () => {
+      // Set loading only if we need to fetch
+      setIsLoading(true)
       const requestId = `getProfile-${Date.now()}-${Math.random()}`
       
       // Track this request as ongoing
@@ -48,7 +53,7 @@ const Profile = () => {
         // Untrack when request completes successfully
         untrackRequest(requestId)
         // Check if component is still mounted and request wasn't cancelled
-        if (!signal?.aborted) {
+        if (isMounted && !signal?.aborted) {
           const userData = response.data.user
           const profileData = {
             name: userData.name || '',
@@ -73,7 +78,7 @@ const Profile = () => {
           navigate('/login', { replace: true })
           return
         }
-        if (!signal?.aborted) {
+        if (isMounted && !signal?.aborted) {
           openModal({
             title: 'Error',
             content: <p>Failed to load profile. Please try again.</p>,
@@ -81,14 +86,18 @@ const Profile = () => {
           })
         }
       } finally {
-        if (!signal?.aborted) {
+        if (isMounted && !signal?.aborted) {
           setIsLoading(false)
         }
       }
     }
 
     loadProfile()
-  }, [navigate, openModal, signal, trackRequest, untrackRequest])
+
+    return () => {
+      isMounted = false
+    }
+  }, []) // Only run once on mount - signal/trackRequest/untrackRequest are stable refs
 
   useEffect(() => {
     setFormData(profile)
@@ -131,25 +140,17 @@ const Profile = () => {
   const handleSave = async () => {
     const newErrors = {}
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
+    const nameError = validateName(formData.name, 'Name')
+    if (nameError) newErrors.name = nameError
     
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required'
-    }
+    const locationError = validateRequired(formData.location, 'Location')
+    if (locationError) newErrors.location = locationError
     
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Mobile number is required'
-    } else if (formData.phoneNumber.length !== 10) {
-      newErrors.phoneNumber = 'Mobile number must be 10 digits'
-    }
+    const phoneError = validateMobileNumber(formData.phoneNumber)
+    if (phoneError) newErrors.phoneNumber = phoneError
     
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid'
-    }
+    const emailError = validateEmail(formData.email)
+    if (emailError) newErrors.email = emailError
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
@@ -223,7 +224,7 @@ const Profile = () => {
         {/* Personal Details */}
         <div className={styles.detailsSection}>
           <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Name</span>
+            <span className={`${styles.detailLabel} ${errors.name ? styles.labelError : ''}`}>Name</span>
             {isEditing ? (
               <input
                 type="text"
@@ -239,7 +240,7 @@ const Profile = () => {
           </div>
 
           <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Location</span>
+            <span className={`${styles.detailLabel} ${errors.location ? styles.labelError : ''}`}>Location</span>
             {isEditing ? (
               <input
                 type="text"
@@ -255,7 +256,7 @@ const Profile = () => {
           </div>
 
           <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Mobile no.</span>
+            <span className={`${styles.detailLabel} ${errors.phoneNumber ? styles.labelError : ''}`}>Mobile no.</span>
             {isEditing ? (
               <input
                 type="tel"
@@ -274,7 +275,7 @@ const Profile = () => {
           </div>
 
           <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>Email Id</span>
+            <span className={`${styles.detailLabel} ${errors.email ? styles.labelError : ''}`}>Email Id</span>
             {isEditing ? (
               <input
                 type="email"

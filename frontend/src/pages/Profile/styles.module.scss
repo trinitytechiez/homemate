@@ -83,6 +83,11 @@
   font-size: 0.85rem;
   color: #999999;
   font-weight: 500;
+  transition: color var(--transition);
+}
+
+.labelError {
+  color: var(--danger-color);
 }
 
 .detailValue {

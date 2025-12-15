@@ -50,6 +50,16 @@
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--dark-color);
+  transition: color var(--transition);
+}
+
+.labelError {
+  color: var(--danger-color);
+}
+
+.required {
+  color: var(--danger-color);
+  margin-left: 2px;
 }
 
 .input {
@@ -188,6 +198,207 @@
   }
 }
 
+// OTP Verification Screen
+.otpOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.otpCard {
+  background-color: var(--white);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.otpTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--dark-color);
+  margin: 0;
+  text-align: center;
+}
+
+.otpSubtitle {
+  font-size: 0.9rem;
+  color: #666666;
+  margin: 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.otpInputContainer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.otpInput {
+  width: 60px;
+  height: 60px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  color: var(--dark-color);
+  transition: var(--transition);
+  background-color: var(--white);
+
+  &:focus {
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    outline: none;
+  }
+
+  &:disabled {
+    background-color: #f5f5f5;
+    color: #999999;
+    cursor: not-allowed;
+  }
+}
+
+.otpInputExpired {
+  border-color: var(--danger-color);
+  background-color: #fff5f5;
+}
+
+.timerText {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666666;
+  margin: 0;
+
+  strong {
+    color: #4A90E2;
+    font-weight: 600;
+  }
+}
+
+.expiredText {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--danger-color);
+  margin: 0;
+  font-weight: 500;
+}
+
+.otpActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.verifyButton {
+  width: 100%;
+  padding: 0.875rem;
+  background-color: #4A90E2;
+  color: var(--white);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border: none;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background-color: #357ABD;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.resendButton {
+  background: none;
+  border: none;
+  color: #4A90E2;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  text-align: center;
+  transition: var(--transition);
+  font-weight: 500;
+
+  &:hover:not(:disabled) {
+    color: #357ABD;
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.changeEmailButton {
+  background: none;
+  border: none;
+  color: #666666;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  text-align: center;
+  transition: var(--transition);
+
+  &:hover:not(:disabled) {
+    color: var(--dark-color);
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 @media (max-width: 480px) {
   .registerCard {
     padding: 1.5rem 1rem;
@@ -208,5 +419,15 @@
 
   .signUpButton {
     padding: 0.75rem;
+  }
+
+  .otpCard {
+    padding: 1.5rem 1rem;
+  }
+
+  .otpInput {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
   }
 }

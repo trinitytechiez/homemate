@@ -1,46 +1,94 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback, useLayoutEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
 import EmptyState from '../../components/EmptyState/EmptyState'
 import Shimmer from '../../components/Shimmer'
 import { getStaffData } from '../../utils/staffData'
+import { getCachedData } from '../../utils/apiCache'
 import { useToast } from '../../contexts/ToastContext'
 import { useRequestCancellation } from '../../utils/useRequestCancellation'
+import { useDebounce } from '../../utils/useDebounce'
 import styles from './styles.module.scss'
 
 const Staff = () => {
   const navigate = useNavigate()
   const { showError } = useToast()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [staffData, setStaffData] = useState([])
   const { signal, trackRequest, untrackRequest } = useRequestCancellation()
+  
+  const [searchQuery, setSearchQuery] = useState('')
+  const [staffData, setStaffData] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Check cache synchronously on every mount and update state immediately
+  useLayoutEffect(() => {
+    const cached = getCachedData('/staff', {}, 10 * 1000)
+    if (cached !== null) {
+      // If cached, use it immediately without loading state
+      const mappedData = cached.map(staff => ({
+        ...staff,
+        id: staff._id || staff.id
+      }))
+      setStaffData(mappedData)
+      setIsLoading(false)
+    } else {
+      // If not cached, show shimmer
+      setIsLoading(true)
+    }
+  }, []) // Run on every mount
+
+  // Check authentication (non-blocking)
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (!token || token.trim().length === 0) {
+      // Use setTimeout to avoid blocking render
+      setTimeout(() => {
+        navigate('/login', { replace: true })
+      }, 0)
+    }
+  }, [navigate])
 
   useEffect(() => {
+    console.log('👥 Staff: useEffect triggered', { 
+      signalAborted: signal?.aborted,
+      hasSignal: !!signal 
+    })
+    
+    let isMounted = true
+    let hasCalled = false // Prevent double calls in StrictMode
+
     const loadData = async () => {
-      const token = localStorage.getItem('token')
-      
-      if (!token || token.trim().length === 0) {
-        navigate('/login', { replace: true })
+      // Prevent duplicate calls (React StrictMode causes double renders)
+      if (hasCalled) {
+        console.log('👥 Staff: loadData already called, skipping duplicate')
         return
       }
-
+      hasCalled = true
+      
+      console.log('👥 Staff: loadData called')
       try {
-        const data = await getStaffData(true, signal, trackRequest, untrackRequest)
+        // Always fetch from API (bypass cache) to get fresh data
+        console.log('👥 Staff: Calling getStaffData with useCache=false')
+        const data = await getStaffData(false, signal, trackRequest, untrackRequest)
+        console.log('👥 Staff: Received data', data)
         // Check if component is still mounted and request wasn't cancelled
-        if (!signal?.aborted) {
+        if (isMounted && !signal?.aborted) {
           const mappedData = data.map(staff => ({
             ...staff,
             id: staff._id || staff.id
           }))
           setStaffData(mappedData)
+          setIsLoading(false)
+          console.log('👥 Staff: Data set, loading false')
+        } else {
+          console.log('👥 Staff: Skipping state update', { isMounted, signalAborted: signal?.aborted })
         }
       } catch (error) {
         // Don't handle cancelled requests
         if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
+          console.log('👥 Staff: Request was cancelled')
           return
         }
-        console.error('Error loading staff data:', error)
+        console.error('👥 Staff: Error loading staff data:', error)
         if (error.response?.status === 401) {
           navigate('/login', { replace: true })
           return
@@ -50,35 +98,50 @@ const Staff = () => {
         if (error.response?.status !== 200 && error.response?.status !== 404) {
           showError('Failed to load staff data. Please try again.')
         }
-      } finally {
-        if (!signal?.aborted) {
+        if (isMounted && !signal?.aborted) {
           setIsLoading(false)
         }
       }
     }
 
+    // Always call API to refresh data
     loadData()
-  }, [navigate, showError, signal, trackRequest, untrackRequest])
 
-  // Filter staff based on search query
-  const filteredStaff = (staffData || []).filter(staff =>
-    staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    staff.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    staff.location.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    return () => {
+      console.log('👥 Staff: Cleanup - unmounting')
+      isMounted = false
+    }
+  }, []) // Only run once on mount
 
-  const handleStaffClick = (staff) => {
+  // Debounce search query to avoid filtering on every keystroke
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
+  // Memoize filtered staff to avoid recalculation on every render
+  const filteredStaff = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) {
+      return staffData
+    }
+    const query = debouncedSearchQuery.toLowerCase()
+    return staffData.filter(staff =>
+      staff.name.toLowerCase().includes(query) ||
+      staff.role.toLowerCase().includes(query) ||
+      staff.location.toLowerCase().includes(query)
+    )
+  }, [staffData, debouncedSearchQuery])
+
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleStaffClick = useCallback((staff) => {
     navigate(`/staff/${staff.id || staff._id}`, { 
       state: { 
         staff,
         fromStaffList: true
       } 
     })
-  }
+  }, [navigate])
 
-  const handleFilterClick = () => {
+  const handleFilterClick = useCallback(() => {
     console.log('Filter clicked')
-  }
+  }, [])
 
   return (
     <div className={styles.staffContainer}>

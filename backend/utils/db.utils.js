@@ -30,6 +30,7 @@ export const getMongoStatus = () => {
 /**
  * Ensure MongoDB connection (for serverless environments)
  * Attempts to connect if not connected and waits for connection
+ * Uses the same connection logic as server.js
  * @returns {Promise<boolean>} True if connected, false otherwise
  */
 export const ensureMongoConnection = async () => {
@@ -53,62 +54,95 @@ export const ensureMongoConnection = async () => {
   // Try to connect if disconnected
   if (mongoose.connection.readyState === 0) {
     try {
-      // Use environment variable (Vercel sets this automatically)
-      const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homemate'
+      // Try to import connection function from server.js (if available)
+      // Otherwise, use the same logic
+      let connectionUri, mongooseOptions
       
-      if (!MONGODB_URI || MONGODB_URI === 'mongodb://localhost:27017/homemate') {
-        console.error('ensureMongoConnection: MONGODB_URI not set in environment variables')
-        return false
+      try {
+        // Try to get from server.js exports (works if server.js has been loaded)
+        const serverModule = await import('../server.js')
+        connectionUri = serverModule.getConnectionUri?.() || null
+        mongooseOptions = serverModule.getMongooseOptions?.() || null
+      } catch (importError) {
+        // Server.js not loaded yet, build connection string ourselves
+        connectionUri = null
+        mongooseOptions = null
       }
       
-      // Ensure database name is in connection string
-      let connectionUri = MONGODB_URI
-      const isAtlasConnection = connectionUri.includes('mongodb+srv://')
-      
-      if (isAtlasConnection) {
-        // Check if database name is present
-        const hasDbName = /\/[^\/\?]+(\?|$)/.test(connectionUri.split('@')[1] || '')
-        if (!hasDbName) {
-          if (connectionUri.includes('?')) {
-            connectionUri = connectionUri.replace('?', '/homemate?')
-          } else {
-            connectionUri = connectionUri.endsWith('/') 
-              ? `${connectionUri}homemate` 
-              : `${connectionUri}/homemate`
+      // If we couldn't get from server.js, build it ourselves
+      if (!connectionUri) {
+        const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homemate'
+        
+        if (!MONGODB_URI || MONGODB_URI === 'mongodb://localhost:27017/homemate') {
+          console.error('ensureMongoConnection: MONGODB_URI not set in environment variables')
+          console.error('   This is required for Vercel deployment')
+          console.error('   Set MONGODB_URI in Vercel Dashboard → Settings → Environment Variables')
+          return false
+        }
+        
+        // Process connection string (same logic as server.js)
+        connectionUri = MONGODB_URI
+        const isAtlasConnection = connectionUri.includes('mongodb+srv://')
+        
+        if (connectionUri.includes('mongodb+srv://') || connectionUri.includes('mongodb://')) {
+          // Check if database name is already in the path
+          const hasDbName = /\/[^\/\?]+(\?|$)/.test(connectionUri.split('@')[1] || '')
+          if (!hasDbName) {
+            // Add database name before query string or at the end
+            if (connectionUri.includes('?')) {
+              connectionUri = connectionUri.replace('?', '/homemate?')
+            } else {
+              connectionUri = connectionUri.endsWith('/') 
+                ? `${connectionUri}homemate` 
+                : `${connectionUri}/homemate`
+            }
+          }
+          
+          // For MongoDB Atlas, ensure connection string has proper SSL/TLS parameters
+          if (isAtlasConnection) {
+            // Add required query parameters if not present
+            const hasQueryParams = connectionUri.includes('?')
+            const params = []
+            
+            if (!connectionUri.includes('retryWrites=')) {
+              params.push('retryWrites=true')
+            }
+            
+            if (!connectionUri.includes('w=')) {
+              params.push('w=majority')
+            }
+            
+            if (params.length > 0) {
+              const separator = hasQueryParams ? '&' : '?'
+              connectionUri = `${connectionUri}${separator}${params.join('&')}`
+            }
           }
         }
         
-        // Add required query parameters if not present
-        const hasQueryParams = connectionUri.includes('?')
-        const params = []
-        
-        if (!connectionUri.includes('retryWrites=')) {
-          params.push('retryWrites=true')
+        // Build options (same as server.js)
+        mongooseOptions = {
+          serverSelectionTimeoutMS: 5000,
+          socketTimeoutMS: 45000,
+          connectTimeoutMS: 10000,
+          maxPoolSize: 1,
+          minPoolSize: 0,
+          maxIdleTimeMS: 30000,
+          heartbeatFrequencyMS: 10000,
+          retryWrites: true,
+          retryReads: true,
+          bufferCommands: true
         }
         
-        if (!connectionUri.includes('w=')) {
-          params.push('w=majority')
+        if (isAtlasConnection) {
+          mongooseOptions.connectTimeoutMS = 20000
+          mongooseOptions.serverSelectionTimeoutMS = 15000
         }
-        
-        if (params.length > 0) {
-          const separator = hasQueryParams ? '&' : '?'
-          connectionUri = `${connectionUri}${separator}${params.join('&')}`
-        }
-      }
-      
-      // Connection options optimized for serverless
-      const options = {
-        serverSelectionTimeoutMS: 15000,
-        connectTimeoutMS: 20000,
-        maxPoolSize: 1,
-        minPoolSize: 0,
-        retryWrites: true,
-        retryReads: true,
-        bufferCommands: true
       }
       
       console.log('ensureMongoConnection: Attempting to connect to MongoDB...')
-      await mongoose.connect(connectionUri, options)
+      console.log('ensureMongoConnection: URI configured:', !!connectionUri)
+      
+      await mongoose.connect(connectionUri, mongooseOptions)
       
       // Verify connection
       if (mongoose.connection.readyState === 1) {
@@ -120,7 +154,13 @@ export const ensureMongoConnection = async () => {
       }
     } catch (error) {
       console.error('ensureMongoConnection error:', error.message)
-      console.error('Error stack:', error.stack)
+      console.error('Error name:', error.name)
+      if (error.message.includes('IP')) {
+        console.error('   → IP whitelisting issue. Check MongoDB Atlas Network Access')
+      }
+      if (error.message.includes('authentication')) {
+        console.error('   → Authentication issue. Check username/password in connection string')
+      }
       return false
     }
   }

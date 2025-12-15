@@ -14,18 +14,39 @@ export const useRequestCancellation = () => {
   const ongoingRequestsRef = useRef(new Set())
 
   useEffect(() => {
-    // Only cancel ongoing requests when route changes
-    if (ongoingRequestsRef.current.size > 0) {
-      abortControllerRef.current.abort()
-      ongoingRequestsRef.current.clear()
-    }
-
-    // Create new AbortController for current route
+    // Create new AbortController FIRST for current route
+    // This ensures new requests get a fresh signal
+    const oldController = abortControllerRef.current
     abortControllerRef.current = new AbortController()
+    
+    console.log('🔄 useRequestCancellation: Route changed, new controller created', {
+      pathname: location.pathname,
+      oldControllerAborted: oldController.signal.aborted,
+      ongoingRequests: ongoingRequestsRef.current.size
+    })
+
+    // Use setTimeout to avoid blocking navigation
+    // Abort old requests AFTER a small delay to allow new requests to be tracked
+    const timeoutId = setTimeout(() => {
+      // Only cancel ongoing requests from the OLD controller
+      // New requests should already be using the new controller
+      if (ongoingRequestsRef.current.size > 0) {
+        console.log('🚫 useRequestCancellation: Aborting old requests', {
+          count: ongoingRequestsRef.current.size
+        })
+        oldController.abort()
+        ongoingRequestsRef.current.clear()
+      }
+    }, 100) // Small delay to allow new requests to start
 
     // Cleanup: cancel only ongoing requests on unmount
     return () => {
+      clearTimeout(timeoutId)
+      // Only abort if there are actually ongoing requests
       if (ongoingRequestsRef.current.size > 0) {
+        console.log('🚫 useRequestCancellation: Cleanup - aborting requests', {
+          count: ongoingRequestsRef.current.size
+        })
         abortControllerRef.current.abort()
         ongoingRequestsRef.current.clear()
       }

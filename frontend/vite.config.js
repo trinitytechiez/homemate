@@ -29,13 +29,34 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: undefined
+        manualChunks: (id) => {
+          // Split vendor chunks for better caching
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor'
+            }
+            if (id.includes('react-router')) {
+              return 'router-vendor'
+            }
+            return 'vendor'
+          }
+        }
       },
       external: []
     },
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true
+    },
+    // Optimize chunk size
+    chunkSizeWarningLimit: 1000,
+    // Enable minification
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false, // Keep console for debugging
+        drop_debugger: true
+      }
     }
   },
   css: {

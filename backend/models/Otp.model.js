@@ -3,8 +3,15 @@ import mongoose from 'mongoose'
 const otpSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
-    required: true,
-    index: true
+    required: false,
+    index: true,
+    sparse: true
+  },
+  email: {
+    type: String,
+    required: false,
+    index: true,
+    sparse: true
   },
   otp: {
     type: String,
@@ -30,10 +37,22 @@ const otpSchema = new mongoose.Schema({
 
 // Index for faster lookups
 otpSchema.index({ phoneNumber: 1, verified: 1 })
+otpSchema.index({ email: 1, verified: 1 })
+
+// Ensure either phoneNumber or email is provided
+otpSchema.pre('validate', function(next) {
+  if (!this.phoneNumber && !this.email) {
+    next(new Error('Either phoneNumber or email must be provided'))
+  } else {
+    next()
+  }
+})
 
 const Otp = mongoose.models.Otp || mongoose.model('Otp', otpSchema)
 
 export default Otp
+
+
 
 
 

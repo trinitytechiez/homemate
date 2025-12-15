@@ -170,6 +170,10 @@ if (isAtlasConnection) {
 // Cache connection to reuse across serverless invocations
 let cachedConnection = null
 
+// Export connection function and URI for use in other modules
+export const getConnectionUri = () => connectionUri
+export const getMongooseOptions = () => mongooseOptions
+
 const connectMongoDB = async () => {
   // If already connected, return
   if (mongoose.connection.readyState === 1) {
@@ -370,8 +374,14 @@ app.use((err, req, res, next) => {
   })
 })
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`)
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`)
-})
+// Only start HTTP server if not on Vercel (Vercel handles this)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`)
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`)
+  })
+}
+
+// Export app for Vercel serverless
+export default app
 
