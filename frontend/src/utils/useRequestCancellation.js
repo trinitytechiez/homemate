@@ -12,10 +12,32 @@ export const useRequestCancellation = () => {
   const location = useLocation()
   const abortControllerRef = useRef(new AbortController())
   const ongoingRequestsRef = useRef(new Set())
+  // Track whether we've initialized once - we should NOT abort initial controller on mount
+  const hasInitializedRef = useRef(false)
 
   useEffect(() => {
-    // Create new AbortController FIRST for current route
-    // This ensures new requests get a fresh signal
+    // On first mount, just mark initialized and don't replace/abort the controller.
+    // Replacing the controller on initial mount caused in-flight requests started
+    // immediately after mount to be cancelled by the scheduled abort for the "old" controller.
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true
+      console.log('🔄 useRequestCancellation: Initial controller initialized', {
+        pathname: location.pathname
+      })
+
+      // Cleanup on unmount: abort only if there are actually ongoing requests
+      return () => {
+        if (ongoingRequestsRef.current.size > 0) {
+          console.log('🚫 useRequestCancellation: Cleanup - aborting requests on unmount', {
+            count: ongoingRequestsRef.current.size
+          })
+          abortControllerRef.current.abort()
+          ongoingRequestsRef.current.clear()
+        }
+      }
+    }
+
+    // For subsequent route changes, replace the controller and abort old requests after a small delay
     const oldController = abortControllerRef.current
     abortControllerRef.current = new AbortController()
     
@@ -39,7 +61,7 @@ export const useRequestCancellation = () => {
       }
     }, 100) // Small delay to allow new requests to start
 
-    // Cleanup: cancel only ongoing requests on unmount
+    // Cleanup: cancel only ongoing requests on unmount or before next effect run
     return () => {
       clearTimeout(timeoutId)
       // Only abort if there are actually ongoing requests
