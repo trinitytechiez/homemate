@@ -11,6 +11,7 @@ import { getCachedData } from '../../utils/apiCache'
 import { getCurrencySymbol } from '../../utils/currency'
 import { useRequestCancellation } from '../../utils/useRequestCancellation'
 import { validateMobileNumber, validateRequired, validateName } from '../../utils/validation'
+import Loader from '../../components/Loader'
 import styles from './styles.module.scss'
 
 const StaffProfile = () => {
@@ -306,6 +307,8 @@ const StaffProfile = () => {
   }
 
   // Delete staff member with confirmation modal
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const handleDelete = () => {
     openModal({
       title: 'Delete Staff',
@@ -316,9 +319,10 @@ const StaffProfile = () => {
           </p>
           <div className={styles.confirmationActions}>
             <button
-              className={styles.confirmButton}
+              className={styles.editButton}
               onClick={async () => {
                 try {
+                  setIsDeleting(true)
                   await deleteStaffMember(staff.id || staff._id)
                   // Close modal, show success toast and navigate back to staff list
                   closeModal()
@@ -332,14 +336,18 @@ const StaffProfile = () => {
                     content: <p>{errorMessage}</p>,
                     size: 'small'
                   })
+                } finally {
+                  setIsDeleting(false)
                 }
               }}
+              disabled={isDeleting}
             >
-              Delete
+              {isDeleting ? <Loader size="small" variant="button" /> : 'Delete'}
             </button>
             <button
               className={styles.cancelButton}
               onClick={closeModal}
+              disabled={isDeleting}
             >
               Cancel
             </button>
@@ -594,10 +602,10 @@ const StaffProfile = () => {
           </div>
         ) : (
           <div className={styles.actionRow}>
-            <button className={styles.editButton} onClick={handleEdit}>
+            <button className={styles.editButton} onClick={handleEdit} disabled={isDeleting}>
               Edit info
             </button>
-            <button className={styles.deleteButton} onClick={handleDelete}>
+            <button className={styles.deleteButton} onClick={handleDelete} disabled={isDeleting}>
               Delete staff
             </button>
           </div>

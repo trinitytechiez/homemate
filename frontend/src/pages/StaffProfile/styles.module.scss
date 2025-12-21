@@ -284,11 +284,9 @@
   font-size: 0.85rem;
   margin-top: -0.25rem;
 }
-
 .editButton {
-  width: calc(100% - 3rem);
-  margin: 2rem 1.5rem;
-  padding: 0.875rem;
+  /* Reuse the compact button style used for save/edit actions */
+  padding: 0.875rem 1rem;
   background-color: #4A90E2;
   color: var(--white);
   border: none;
@@ -297,6 +295,11 @@
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 120px;
 
   &:hover {
     background-color: #357ABD;
@@ -305,6 +308,45 @@
 
   &:active {
     transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+/* Action row for inline buttons (edit + delete) */
+.actionRow {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+  align-items: center;
+}
+
+.deleteButton {
+  padding: 0.875rem 1rem;
+  background-color: var(--danger-color, #dc3545);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  min-width: 120px;
+
+  &:hover {
+    background-color: #b02a37;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
   }
 }
 
@@ -362,6 +404,27 @@
   &:active {
     transform: translateY(0);
   }
+}
+
+/* Confirmation modal content styling (used by delete modal) */
+.confirmationContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.confirmationMessage {
+  font-size: 1rem;
+  color: var(--dark-color);
+  line-height: 1.5;
+  margin: 0;
+  text-align: center;
+}
+
+.confirmationActions {
+  display: flex;
+  gap: 0.75rem;
 }
 
 @media (max-width: 480px) {
