@@ -27,7 +27,10 @@ export const getToken = () => {
  */
 export const clearAuth = () => {
   localStorage.removeItem('token')
-  window.dispatchEvent(new Event('logout'))
+  // Dispatch logout asynchronously to avoid synchronous event re-entry
+  // which can trigger handlers that call `clearAuth` again and cause
+  // a synchronous infinite recursion (maximum call stack exceeded).
+  setTimeout(() => window.dispatchEvent(new Event('logout')), 0)
 }
 
 /**
@@ -36,6 +39,7 @@ export const clearAuth = () => {
  */
 export const setAuth = (token) => {
   localStorage.setItem('token', token)
-  window.dispatchEvent(new Event('login'))
+  // Dispatch login asynchronously for symmetry and to avoid re-entrancy
+  setTimeout(() => window.dispatchEvent(new Event('login')), 0)
 }
 
