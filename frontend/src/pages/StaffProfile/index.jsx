@@ -6,7 +6,7 @@ import BottomNavigation from '../../components/BottomNavigation/BottomNavigation
 import AttendanceCalendar from '../../components/AttendanceCalendar/AttendanceCalendar'
 import EmptyState from '../../components/EmptyState/EmptyState'
 import Shimmer from '../../components/Shimmer'
-import { getStaffMember, updateStaffMember, updateStaffAttendance } from '../../utils/staffData'
+import { getStaffMember, updateStaffMember, updateStaffAttendance, deleteStaffMember } from '../../utils/staffData'
 import { getCachedData } from '../../utils/apiCache'
 import { getCurrencySymbol } from '../../utils/currency'
 import { useRequestCancellation } from '../../utils/useRequestCancellation'
@@ -17,7 +17,7 @@ const StaffProfile = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams()
-  const { openModal } = useModal()
+  const { openModal, closeModal } = useModal()
   const { showSuccess } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -305,6 +305,51 @@ const StaffProfile = () => {
     }
   }
 
+  // Delete staff member with confirmation modal
+  const handleDelete = () => {
+    openModal({
+      title: 'Delete Staff',
+      content: (
+        <div className={styles.confirmationContent}>
+          <p className={styles.confirmationMessage}>
+            Are you sure you want to delete <strong>{staff.name}</strong>? This action cannot be undone.
+          </p>
+          <div className={styles.confirmationActions}>
+            <button
+              className={styles.confirmButton}
+              onClick={async () => {
+                try {
+                  await deleteStaffMember(staff.id || staff._id)
+                  // Close modal, show success toast and navigate back to staff list
+                  closeModal()
+                  showSuccess('Staff member deleted successfully!')
+                  navigate('/staff', { replace: true })
+                } catch (error) {
+                  console.error('Error deleting staff member:', error)
+                  const errorMessage = error.response?.data?.message || 'Failed to delete staff member. Please try again.'
+                  openModal({
+                    title: 'Error',
+                    content: <p>{errorMessage}</p>,
+                    size: 'small'
+                  })
+                }
+              }}
+            >
+              Delete
+            </button>
+            <button
+              className={styles.cancelButton}
+              onClick={closeModal}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      size: 'small'
+    })
+  }
+
   // Show loading or redirect if no staff data
   if (!staff || !staff.id) {
     if (isLoading) {
@@ -548,9 +593,14 @@ const StaffProfile = () => {
             </button>
           </div>
         ) : (
-          <button className={styles.editButton} onClick={handleEdit}>
-            Edit info
-          </button>
+          <div className={styles.actionRow}>
+            <button className={styles.editButton} onClick={handleEdit}>
+              Edit info
+            </button>
+            <button className={styles.deleteButton} onClick={handleDelete}>
+              Delete staff
+            </button>
+          </div>
         )}
       </div>
 

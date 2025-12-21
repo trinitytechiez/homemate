@@ -122,10 +122,11 @@ const Dashboard = () => {
       return staffData
     }
     const query = debouncedSearchQuery.toLowerCase()
-    return staffData.filter(staff =>
-      staff.name.toLowerCase().includes(query) ||
-      staff.role.toLowerCase().includes(query)
-    )
+    return staffData.filter(staff => {
+      const name = (staff.name || '').toLowerCase()
+      const role = (staff.role || '').toLowerCase()
+      return name.includes(query) || role.includes(query)
+    })
   }, [staffData, debouncedSearchQuery])
 
   // Memoize update handlers to prevent unnecessary re-renders

@@ -122,11 +122,12 @@ const Staff = () => {
       return staffData
     }
     const query = debouncedSearchQuery.toLowerCase()
-    return staffData.filter(staff =>
-      staff.name.toLowerCase().includes(query) ||
-      staff.role.toLowerCase().includes(query) ||
-      staff.location.toLowerCase().includes(query)
-    )
+    return staffData.filter(staff => {
+      const name = (staff.name || '').toLowerCase()
+      const role = (staff.role || '').toLowerCase()
+      const location = (staff.location || '').toLowerCase()
+      return name.includes(query) || role.includes(query) || location.includes(query)
+    })
   }, [staffData, debouncedSearchQuery])
 
   // Memoize handlers to prevent unnecessary re-renders
@@ -182,10 +183,10 @@ const Staff = () => {
                 >
                   <div className={styles.staffAvatar}>
                     {staff.avatar ? (
-                      <img src={staff.avatar} alt={staff.name} />
+                      <img src={staff.avatar} alt={staff.name || 'Staff Member'} />
                     ) : (
                       <span className={styles.avatarPlaceholder}>
-                        {staff.name.charAt(0).toUpperCase()}
+                        {(staff.name && staff.name.charAt(0) ? staff.name.charAt(0).toUpperCase() : '?')}
                       </span>
                     )}
                   </div>
