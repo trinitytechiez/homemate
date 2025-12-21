@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { clearAuth } from './auth.utils'
 
 // Get API URL from environment variable or use default
 const getApiUrl = () => {
@@ -107,14 +108,8 @@ api.interceptors.response.use(
     }
     
     if (error.response?.status === 401) {
-      // Only redirect if not already on login page
-      // This prevents redirect loops during login attempts
-      const currentPath = window.location.pathname
-      if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/set-password') {
-        // Clear token and redirect to login
-        localStorage.removeItem('token')
-        window.location.href = '/login'
-      }
+      // Clear auth state and dispatch logout so app-wide listeners redirect to login
+      clearAuth()
     }
     return Promise.reject(error)
   }
