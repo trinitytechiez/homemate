@@ -5,6 +5,7 @@ import { useToast } from '../../contexts/ToastContext'
 import { addStaffMember } from '../../utils/staffData'
 import { validateMobileNumber, validateRequired, validateName } from '../../utils/validation'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
+import Loader from '../../components/Loader'
 import styles from './styles.module.scss'
 
 const Add = () => {
@@ -73,6 +74,8 @@ const Add = () => {
 
     setIsSubmitting(true)
     
+    let didNavigate = false
+
     try {
       // Combine first and last name
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim()
@@ -98,11 +101,11 @@ const Add = () => {
       
       // Show success toast
       showSuccess(`Staff member "${fullName}" has been added successfully!`)
-      
-      // Navigate to staff list after a short delay
-      setTimeout(() => {
-        navigate('/staff')
-      }, 500)
+
+      // Immediately navigate to dashboard (SPA navigation)
+      didNavigate = true
+      navigate('/dashboard', { replace: true })
+      return
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to add staff member. Please try again.'
       
@@ -113,7 +116,8 @@ const Add = () => {
         showError(errorMessage)
       }
     } finally {
-      setIsSubmitting(false)
+      // Only reset submitting state if we did not navigate away (avoid setState on unmounted)
+      if (!didNavigate) setIsSubmitting(false)
     }
   }
 
