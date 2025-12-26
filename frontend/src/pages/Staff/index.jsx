@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useLayoutEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
 import EmptyState from '../../components/EmptyState/EmptyState'
 import Shimmer from '../../components/Shimmer'
@@ -12,9 +12,10 @@ import styles from './styles.module.scss'
 
 const Staff = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { showError } = useToast()
   const { signal, trackRequest, untrackRequest } = useRequestCancellation()
-  
+
   const [searchQuery, setSearchQuery] = useState('')
   const [staffData, setStaffData] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -34,7 +35,7 @@ const Staff = () => {
       // If not cached, show shimmer
       setIsLoading(true)
     }
-  }, []) // Run on every mount
+  }, [location.pathname]) // Re-run when route changes
 
   // Check authentication (non-blocking)
   useEffect(() => {
@@ -48,11 +49,12 @@ const Staff = () => {
   }, [navigate])
 
   useEffect(() => {
-    console.log('👥 Staff: useEffect triggered', { 
+    console.log('👥 Staff: useEffect triggered', {
       signalAborted: signal?.aborted,
-      hasSignal: !!signal 
+      hasSignal: !!signal,
+      pathname: location.pathname
     })
-    
+
     let isMounted = true
     let hasCalled = false // Prevent double calls in StrictMode
 
@@ -63,7 +65,7 @@ const Staff = () => {
         return
       }
       hasCalled = true
-      
+
       console.log('👥 Staff: loadData called')
       try {
         // Always fetch from API (bypass cache) to get fresh data
@@ -86,6 +88,10 @@ const Staff = () => {
         // Don't handle cancelled requests
         if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
           console.log('👥 Staff: Request was cancelled')
+          // Still set loading to false even if cancelled to prevent infinite loading
+          if (isMounted) {
+            setIsLoading(false)
+          }
           return
         }
         console.error('👥 Staff: Error loading staff data:', error)
@@ -110,8 +116,10 @@ const Staff = () => {
     return () => {
       console.log('👥 Staff: Cleanup - unmounting')
       isMounted = false
+      // Ensure loading state is reset on cleanup to prevent stuck loading
+      setIsLoading(false)
     }
-  }, []) // Only run once on mount
+  }, [location.pathname]) // Re-run when navigating back to staff page
 
   // Debounce search query to avoid filtering on every keystroke
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
@@ -132,11 +140,11 @@ const Staff = () => {
 
   // Memoize handlers to prevent unnecessary re-renders
   const handleStaffClick = useCallback((staff) => {
-    navigate(`/staff/${staff.id || staff._id}`, { 
-      state: { 
+    navigate(`/staff/${staff.id || staff._id}`, {
+      state: {
         staff,
         fromStaffList: true
-      } 
+      }
     })
   }, [navigate])
 

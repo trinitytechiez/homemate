@@ -32,7 +32,7 @@ const Profile = () => {
   // Check authentication and load profile data on mount
   useEffect(() => {
     const token = localStorage.getItem('token')
-    
+
     if (!token || token.trim().length === 0) {
       navigate('/login', { replace: true })
       return
@@ -44,7 +44,7 @@ const Profile = () => {
       // Set loading only if we need to fetch
       setIsLoading(true)
       const requestId = `getProfile-${Date.now()}-${Math.random()}`
-      
+
       // Track this request as ongoing
       trackRequest(requestId)
 
@@ -64,7 +64,11 @@ const Profile = () => {
             avatar: userData.avatar || null
           }
           setProfile(profileData)
-          setFormData(profileData)
+          // Strip +91 from phone number for form editing
+          setFormData({
+            ...profileData,
+            phoneNumber: (userData.phoneNumber || '').replace('+91', '')
+          })
         }
       } catch (error) {
         // Untrack when request fails or is cancelled
@@ -100,7 +104,11 @@ const Profile = () => {
   }, []) // Only run once on mount - signal/trackRequest/untrackRequest are stable refs
 
   useEffect(() => {
-    setFormData(profile)
+    // Strip +91 from phone number for form editing
+    setFormData({
+      ...profile,
+      phoneNumber: (profile.phoneNumber || '').replace('+91', '')
+    })
   }, [profile])
 
   // Removed handleBack - no back button in Profile header
@@ -111,7 +119,11 @@ const Profile = () => {
 
   const handleCancel = () => {
     setIsEditing(false)
-    setFormData(profile) // Revert changes
+    // Revert changes and strip +91 from phone number
+    setFormData({
+      ...profile,
+      phoneNumber: (profile.phoneNumber || '').replace('+91', '')
+    })
     setErrors({})
   }
 
@@ -139,16 +151,16 @@ const Profile = () => {
 
   const handleSave = async () => {
     const newErrors = {}
-    
+
     const nameError = validateName(formData.name, 'Name')
     if (nameError) newErrors.name = nameError
-    
+
     const locationError = validateRequired(formData.location, 'Location')
     if (locationError) newErrors.location = locationError
-    
+
     const phoneError = validateMobileNumber(formData.phoneNumber)
     if (phoneError) newErrors.phoneNumber = phoneError
-    
+
     const emailError = validateEmail(formData.email)
     if (emailError) newErrors.email = emailError
 
@@ -162,8 +174,8 @@ const Profile = () => {
       const updateData = {
         name: formData.name.trim(),
         location: formData.location.trim(),
-        phoneNumber: formData.phoneNumber.startsWith('+91') 
-          ? formData.phoneNumber 
+        phoneNumber: formData.phoneNumber.startsWith('+91')
+          ? formData.phoneNumber
           : `+91${formData.phoneNumber}`,
         email: formData.email.trim(),
         dob: formData.dob || ''
@@ -183,7 +195,7 @@ const Profile = () => {
       setProfile(updatedProfile)
       setIsEditing(false)
       setErrors({})
-      
+
       showSuccess('Profile updated successfully!')
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -211,117 +223,117 @@ const Profile = () => {
             {/* Profile Section */}
             <div className={styles.profileSection}>
               <div className={styles.avatar}>
-            {profile.avatar ? (
-              <img src={profile.avatar} alt={profile.name || 'User'} />
-            ) : (
-              <span className={styles.avatarPlaceholder}>
-                {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
-              </span>
-            )}
-          </div>
-        </div>
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt={profile.name || 'User'} />
+                ) : (
+                  <span className={styles.avatarPlaceholder}>
+                    {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
+                  </span>
+                )}
+              </div>
+            </div>
 
-        {/* Personal Details */}
-        <div className={styles.detailsSection}>
-          <div className={styles.detailItem}>
-            <span className={`${styles.detailLabel} ${errors.name ? styles.labelError : ''}`}>Name</span>
+            {/* Personal Details */}
+            <div className={styles.detailsSection}>
+              <div className={styles.detailItem}>
+                <span className={`${styles.detailLabel} ${errors.name ? styles.labelError : ''}`}>Name</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className={`${styles.detailInput} ${errors.name ? styles.inputError : ''}`}
+                  />
+                ) : (
+                  <span className={styles.detailValue}>{profile.name || <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}</span>
+                )}
+                {errors.name && <span className={styles.errorText}>{errors.name}</span>}
+              </div>
+
+              <div className={styles.detailItem}>
+                <span className={`${styles.detailLabel} ${errors.location ? styles.labelError : ''}`}>Location</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className={`${styles.detailInput} ${errors.location ? styles.inputError : ''}`}
+                  />
+                ) : (
+                  <span className={styles.detailValue}>{profile.location || <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}</span>
+                )}
+                {errors.location && <span className={styles.errorText}>{errors.location}</span>}
+              </div>
+
+              <div className={styles.detailItem}>
+                <span className={`${styles.detailLabel} ${errors.phoneNumber ? styles.labelError : ''}`}>Mobile no.</span>
+                {isEditing ? (
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleMobileChange}
+                    className={`${styles.detailInput} ${errors.phoneNumber ? styles.inputError : ''}`}
+                    maxLength={10}
+                  />
+                ) : (
+                  <span className={styles.detailValue}>{profile.phoneNumber ? profile.phoneNumber.replace('+91', '') : <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}</span>
+                )}
+                {errors.phoneNumber && <span className={styles.errorText}>{errors.phoneNumber}</span>}
+              </div>
+
+              <div className={styles.detailItem}>
+                <span className={`${styles.detailLabel} ${errors.email ? styles.labelError : ''}`}>Email Id</span>
+                {isEditing ? (
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={`${styles.detailInput} ${errors.email ? styles.inputError : ''}`}
+                  />
+                ) : (
+                  <span className={styles.detailValue}>{profile.email || <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}</span>
+                )}
+                {errors.email && <span className={styles.errorText}>{errors.email}</span>}
+              </div>
+
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>DOB</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="dob"
+                    value={formData.dob}
+                    onChange={handleChange}
+                    className={styles.detailInput}
+                    placeholder="DD/MM/YYYY"
+                  />
+                ) : (
+                  <span className={styles.detailValue}>{profile.dob || <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
             {isEditing ? (
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className={`${styles.detailInput} ${errors.name ? styles.inputError : ''}`}
-              />
+              <div className={styles.editActions}>
+                <button className={styles.saveButton} onClick={handleSave}>
+                  Save Changes
+                </button>
+                <button className={styles.cancelButton} onClick={handleCancel}>
+                  Cancel
+                </button>
+              </div>
             ) : (
-              <span className={styles.detailValue}>{profile.name || <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}</span>
+              <button className={styles.editButton} onClick={handleEdit}>
+                Edit info
+              </button>
             )}
-            {errors.name && <span className={styles.errorText}>{errors.name}</span>}
-          </div>
-
-          <div className={styles.detailItem}>
-            <span className={`${styles.detailLabel} ${errors.location ? styles.labelError : ''}`}>Location</span>
-            {isEditing ? (
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                className={`${styles.detailInput} ${errors.location ? styles.inputError : ''}`}
-              />
-            ) : (
-              <span className={styles.detailValue}>{profile.location || <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}</span>
-            )}
-            {errors.location && <span className={styles.errorText}>{errors.location}</span>}
-          </div>
-
-          <div className={styles.detailItem}>
-            <span className={`${styles.detailLabel} ${errors.phoneNumber ? styles.labelError : ''}`}>Mobile no.</span>
-            {isEditing ? (
-              <input
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                name="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={handleMobileChange}
-                className={`${styles.detailInput} ${errors.phoneNumber ? styles.inputError : ''}`}
-                maxLength={10}
-              />
-            ) : (
-              <span className={styles.detailValue}>{profile.phoneNumber || <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}</span>
-            )}
-            {errors.phoneNumber && <span className={styles.errorText}>{errors.phoneNumber}</span>}
-          </div>
-
-          <div className={styles.detailItem}>
-            <span className={`${styles.detailLabel} ${errors.email ? styles.labelError : ''}`}>Email Id</span>
-            {isEditing ? (
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className={`${styles.detailInput} ${errors.email ? styles.inputError : ''}`}
-              />
-            ) : (
-              <span className={styles.detailValue}>{profile.email || <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}</span>
-            )}
-            {errors.email && <span className={styles.errorText}>{errors.email}</span>}
-          </div>
-
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>DOB</span>
-            {isEditing ? (
-              <input
-                type="text"
-                name="dob"
-                value={formData.dob}
-                onChange={handleChange}
-                className={styles.detailInput}
-                placeholder="DD/MM/YYYY"
-              />
-            ) : (
-              <span className={styles.detailValue}>{profile.dob || <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}</span>
-            )}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        {isEditing ? (
-          <div className={styles.editActions}>
-            <button className={styles.saveButton} onClick={handleSave}>
-              Save Changes
-            </button>
-            <button className={styles.cancelButton} onClick={handleCancel}>
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button className={styles.editButton} onClick={handleEdit}>
-            Edit info
-          </button>
-        )}
           </>
         )}
       </div>

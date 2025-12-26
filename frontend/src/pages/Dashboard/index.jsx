@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useLayoutEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import Shimmer from '../../components/Shimmer'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
 import StaffCard from '../../components/StaffCard/StaffCard'
@@ -13,6 +13,7 @@ import styles from './styles.module.scss'
 
 const Dashboard = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { showError } = useToast()
   const { signal, trackRequest, untrackRequest } = useRequestCancellation()
 
@@ -36,12 +37,13 @@ const Dashboard = () => {
       // If not cached, show shimmer
       setIsLoading(true)
     }
-  }, []) // Run on every mount
+  }, [location.pathname]) // Re-run when route changes
 
   useEffect(() => {
     console.log('📊 Dashboard: useEffect triggered', {
       signalAborted: signal?.aborted,
-      hasSignal: !!signal
+      hasSignal: !!signal,
+      pathname: location.pathname
     })
 
     let isMounted = true
@@ -77,6 +79,10 @@ const Dashboard = () => {
         // Don't handle cancelled requests
         if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
           console.log('📊 Dashboard: Request was cancelled')
+          // Still set loading to false even if cancelled to prevent infinite loading
+          if (isMounted) {
+            setIsLoading(false)
+          }
           return
         }
         console.error('📊 Dashboard: Error loading staff data:', error)
@@ -95,8 +101,10 @@ const Dashboard = () => {
     return () => {
       console.log('📊 Dashboard: Cleanup - unmounting')
       isMounted = false
+      // Ensure loading state is reset on cleanup to prevent stuck loading
+      setIsLoading(false)
     }
-  }, []) // Only run once on mount
+  }, [location.pathname]) // Re-run when navigating back to dashboard
 
   // Memoize date formatting to avoid recalculation on every render
   const { formattedDate, monthName } = useMemo(() => {
