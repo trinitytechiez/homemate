@@ -172,18 +172,25 @@ const StaffProfile = () => {
               const todayKey = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate())
               const isAbsentToday = absentDatesSet.has(todayKey)
               
+              // Update attendance - this is the critical operation
               await updateStaffAttendance(staff.id || staff._id, {
                 absentDates: absentDatesArray,
                 isAbsentToday
               })
               
-              // Refresh staff data
-              const updatedStaff = await getStaffMember(staff.id || staff._id)
-              const mappedStaff = {
-                ...updatedStaff,
-                id: updatedStaff._id || updatedStaff.id
+              // Attendance updated successfully - now try to refresh data
+              // If refresh fails, we don't want to show an error since the update succeeded
+              try {
+                const updatedStaff = await getStaffMember(staff.id || staff._id)
+                const mappedStaff = {
+                  ...updatedStaff,
+                  id: updatedStaff._id || updatedStaff.id
+                }
+                setStaff(mappedStaff)
+              } catch (refreshError) {
+                // Silently fail on refresh - the attendance was already updated successfully
+                console.warn('Failed to refresh staff data after attendance update:', refreshError)
               }
-              setStaff(mappedStaff)
             } catch (error) {
               console.error('Error updating attendance:', error)
               openModal({

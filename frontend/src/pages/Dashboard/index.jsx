@@ -15,7 +15,7 @@ const Dashboard = () => {
   const navigate = useNavigate()
   const { showError } = useToast()
   const { signal, trackRequest, untrackRequest } = useRequestCancellation()
-  
+
   const [viewMode, setViewMode] = useState('monthly') // 'monthly' or 'weekly'
   const [searchQuery, setSearchQuery] = useState('')
   const [staffData, setStaffData] = useState([])
@@ -39,11 +39,11 @@ const Dashboard = () => {
   }, []) // Run on every mount
 
   useEffect(() => {
-    console.log('📊 Dashboard: useEffect triggered', { 
+    console.log('📊 Dashboard: useEffect triggered', {
       signalAborted: signal?.aborted,
-      hasSignal: !!signal 
+      hasSignal: !!signal
     })
-    
+
     let isMounted = true
     let hasCalled = false // Prevent double calls in StrictMode
 
@@ -54,7 +54,7 @@ const Dashboard = () => {
         return
       }
       hasCalled = true
-      
+
       console.log('📊 Dashboard: loadData called')
       try {
         // Always fetch from API (bypass cache) to get fresh data
@@ -101,11 +101,11 @@ const Dashboard = () => {
   // Memoize date formatting to avoid recalculation on every render
   const { formattedDate, monthName } = useMemo(() => {
     const currentDate = new Date()
-    const dateOptions = { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric', 
-      weekday: 'long' 
+    const dateOptions = {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      weekday: 'long'
     }
     return {
       formattedDate: currentDate.toLocaleDateString('en-IN', dateOptions),
@@ -117,29 +117,47 @@ const Dashboard = () => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
 
   // Memoize filtered staff to avoid recalculation on every render
+  // Filter by both search query AND pay cycle (viewMode)
   const filteredStaff = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) {
-      return staffData
-    }
-    const query = debouncedSearchQuery.toLowerCase()
-    return staffData.filter(staff => {
-      const name = (staff.name || '').toLowerCase()
-      const role = (staff.role || '').toLowerCase()
-      return name.includes(query) || role.includes(query)
+    // First filter by pay cycle based on view mode
+    let filtered = staffData.filter(staff => {
+      const payCycle = (staff.payCycle || 'Monthly').toLowerCase()
+      const currentView = viewMode.toLowerCase()
+      return payCycle === currentView
     })
-  }, [staffData, debouncedSearchQuery])
+
+    // Then filter by search query if present
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase()
+      filtered = filtered.filter(staff => {
+        const name = (staff.name || '').toLowerCase()
+        const role = (staff.role || '').toLowerCase()
+        return name.includes(query) || role.includes(query)
+      })
+    }
+
+    return filtered
+  }, [staffData, debouncedSearchQuery, viewMode])
 
   // Memoize update handlers to prevent unnecessary re-renders
   const updateStaffAbsentStatus = useCallback(async (staffId, isAbsentToday) => {
     try {
+      // Update attendance - this is the critical operation
       await updateStaffAttendance(staffId, { isAbsentToday })
-      // Refetch with cache bypass to get fresh data
-      const data = await getStaffData(false)
-      const mappedData = data.map(staff => ({
-        ...staff,
-        id: staff._id || staff.id
-      }))
-      setStaffData(mappedData)
+
+      // Attendance updated successfully - now try to refresh data
+      // If refresh fails, we don't want to show an error since the update succeeded
+      try {
+        const data = await getStaffData(false)
+        const mappedData = data.map(staff => ({
+          ...staff,
+          id: staff._id || staff.id
+        }))
+        setStaffData(mappedData)
+      } catch (refreshError) {
+        // Silently fail on refresh - the attendance was already updated successfully
+        console.warn('Failed to refresh staff data after attendance update:', refreshError)
+      }
     } catch (error) {
       console.error('Error updating absent status:', error)
       showError('Failed to update attendance. Please try again.')
@@ -149,26 +167,33 @@ const Dashboard = () => {
   const updateStaffAbsentDates = useCallback(async (staffId, absentDatesSet) => {
     try {
       const absentDatesArray = Array.from(absentDatesSet)
-      
+
       const today = new Date()
       const formatDateKey = (year, month, day) => {
         return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
       }
       const todayKey = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate())
       const isAbsentToday = absentDatesSet.has(todayKey)
-      
+
+      // Update attendance - this is the critical operation
       await updateStaffAttendance(staffId, {
         absentDates: absentDatesArray,
         isAbsentToday
       })
-      
-      // Refetch with cache bypass to get fresh data
-      const data = await getStaffData(false)
-      const mappedData = data.map(staff => ({
-        ...staff,
-        id: staff._id || staff.id
-      }))
-      setStaffData(mappedData)
+
+      // Attendance updated successfully - now try to refresh data
+      // If refresh fails, we don't want to show an error since the update succeeded
+      try {
+        const data = await getStaffData(false)
+        const mappedData = data.map(staff => ({
+          ...staff,
+          id: staff._id || staff.id
+        }))
+        setStaffData(mappedData)
+      } catch (refreshError) {
+        // Silently fail on refresh - the attendance was already updated successfully
+        console.warn('Failed to refresh staff data after attendance update:', refreshError)
+      }
     } catch (error) {
       console.error('Error updating absent dates:', error)
       showError('Failed to update attendance. Please try again.')
@@ -222,8 +247,8 @@ const Dashboard = () => {
           ) : (
             filteredStaff.length > 0 ? (
               filteredStaff.map((staff) => (
-                <StaffCard 
-                  key={staff.id || staff._id} 
+                <StaffCard
+                  key={staff.id || staff._id}
                   staff={staff}
                   onAbsentToggle={(isAbsent) => updateStaffAbsentStatus(staff.id || staff._id, isAbsent)}
                   onAbsentDatesUpdate={(absentDates) => updateStaffAbsentDates(staff.id || staff._id, absentDates)}

@@ -9,7 +9,7 @@ const StaffCard = memo(({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
   const [isAbsent, setIsAbsent] = useState(staff.isAbsentToday || false)
   const { openModal } = useModal()
   const navigate = useNavigate()
-  
+
   const {
     name,
     role,
@@ -20,12 +20,13 @@ const StaffCard = memo(({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
     currency,
     paidLeaves,
     phoneNumber,
+    payCycle,
     absentDates = []
   } = staff
-  
+
   // Memoize absentDatesSet to avoid recreating on every render
   const absentDatesSet = useMemo(() => new Set(absentDates), [absentDates])
-  
+
   useEffect(() => {
     if (staff.isAbsentToday !== undefined) {
       setIsAbsent(staff.isAbsentToday)
@@ -40,17 +41,17 @@ const StaffCard = memo(({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
   const handleAbsentToggle = useCallback(() => {
     const newAbsentStatus = !isAbsent
     setIsAbsent(newAbsentStatus)
-    
+
     const today = new Date()
     const todayKey = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate())
     const newAbsentDates = new Set(absentDatesSet)
-    
+
     if (newAbsentStatus) {
       newAbsentDates.add(todayKey)
     } else {
       newAbsentDates.delete(todayKey)
     }
-    
+
     if (onAbsentToggle) {
       onAbsentToggle(newAbsentStatus)
     }
@@ -77,8 +78,8 @@ const StaffCard = memo(({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
     openModal({
       title: `Attendance log: ${name}`,
       content: (
-        <AttendanceCalendar 
-          staffName={name} 
+        <AttendanceCalendar
+          staffName={name}
           staffId={staff.id || staff._id}
           initialAbsentDates={absentDatesSet}
           onAbsentDatesUpdate={onAbsentDatesUpdate}
@@ -109,7 +110,7 @@ const StaffCard = memo(({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
             )}
           </div>
           <div className={styles.staffDetails}>
-            <h3 
+            <h3
               className={styles.staffName}
               onClick={handleNameClick}
               style={{ cursor: 'pointer' }}
@@ -120,15 +121,15 @@ const StaffCard = memo(({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
           </div>
         </div>
         <div className={styles.actionIcons}>
-          <button 
-            className={styles.iconButton} 
+          <button
+            className={styles.iconButton}
             aria-label="Call"
             onClick={handlePhoneClick}
           >
             <span className={styles.icon}>📞</span>
           </button>
-          <button 
-            className={styles.iconButton} 
+          <button
+            className={styles.iconButton}
             aria-label="Calendar"
             onClick={handleCalendarClick}
           >
@@ -138,22 +139,22 @@ const StaffCard = memo(({ staff, onAbsentToggle, onAbsentDatesUpdate }) => {
       </div>
 
       <div className={styles.cardBody}>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Pay till today:</span>
-              <span className={styles.infoValue}>{currencySymbol} {payTillToday}</span>
-            </div>
+        <div className={styles.infoRow}>
+          <span className={styles.infoLabel}>Pay till today:</span>
+          <span className={styles.infoValue}>{currencySymbol} {payTillToday}</span>
+        </div>
         <div className={styles.infoRow}>
           <span className={styles.infoLabel}>Leaves till today:</span>
           <span className={styles.infoValue}>{leavesTillToday}</span>
         </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoText}>
-                Monthly salary: {currencySymbol} {monthlySalary} | Paid leaves: {paidLeaves}
-              </span>
-            </div>
+        <div className={styles.infoRow}>
+          <span className={styles.infoText}>
+            {payCycle || 'Monthly'} salary: {currencySymbol} {monthlySalary} | Paid leaves: {paidLeaves}
+          </span>
+        </div>
       </div>
 
-      <button 
+      <button
         className={`${styles.absentButton} ${isAbsent ? styles.absentButtonActive : ''}`}
         onClick={handleAbsentToggle}
       >
