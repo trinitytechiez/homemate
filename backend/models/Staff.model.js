@@ -82,6 +82,36 @@ const staffSchema = new mongoose.Schema(
       type: [String],
       default: []
     },
+    halfDayDates: {
+      type: [String],
+      default: []
+    },
+    advances: [
+      {
+        amount: { type: Number, required: true },
+        date: { type: String, required: true },
+        note: { type: String, default: '' },
+        deducted: { type: Boolean, default: false }
+      }
+    ],
+    payments: [
+      {
+        month: { type: String, required: true },  // e.g. '2025-05'
+        year: { type: Number, required: true },
+        totalDays: { type: Number, default: 0 },
+        presentDays: { type: Number, default: 0 },
+        halfDays: { type: Number, default: 0 },
+        absentDays: { type: Number, default: 0 },
+        grossSalary: { type: Number, default: 0 },
+        deductions: { type: Number, default: 0 },
+        advanceDeducted: { type: Number, default: 0 },
+        netSalary: { type: Number, default: 0 },
+        status: { type: String, enum: ['pending', 'partial', 'paid'], default: 'pending' },
+        amountPaid: { type: Number, default: 0 },
+        paidOn: { type: String, default: '' },
+        note: { type: String, default: '' }
+      }
+    ],
     addedOn: {
       type: String,
       required: true

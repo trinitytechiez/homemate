@@ -132,7 +132,7 @@ router.patch('/:id/attendance', authMiddleware, async (req, res) => {
       return sendErrorResponse(res, 503, 'Database not connected')
     }
 
-    const { absentDates, isAbsentToday } = req.body
+    const { absentDates, isAbsentToday, halfDayDates } = req.body
 
     const updateData = {}
     if (absentDates !== undefined) {
@@ -140,6 +140,9 @@ router.patch('/:id/attendance', authMiddleware, async (req, res) => {
     }
     if (isAbsentToday !== undefined) {
       updateData.isAbsentToday = isAbsentToday
+    }
+    if (halfDayDates !== undefined) {
+      updateData.halfDayDates = halfDayDates
     }
 
     const staff = await Staff.findOneAndUpdate(
@@ -156,6 +159,108 @@ router.patch('/:id/attendance', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Update attendance error:', error)
     return sendErrorResponse(res, 500, 'Error updating attendance', error)
+  }
+})
+
+// --- Advance Tracking ---
+router.post('/:id/advances', authMiddleware, async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return sendErrorResponse(res, 503, 'Database not connected')
+    }
+    const { amount, date, note } = req.body
+    if (!amount || !date) {
+      return sendErrorResponse(res, 400, 'Amount and date are required')
+    }
+    const staff = await Staff.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { $push: { advances: { amount, date, note: note || '', deducted: false } } },
+      { new: true }
+    )
+    if (!staff) return sendErrorResponse(res, 404, 'Staff member not found')
+    return sendSuccessResponse(res, 201, 'Advance recorded successfully', { staff })
+  } catch (error) {
+    console.error('Add advance error:', error)
+    return sendErrorResponse(res, 500, 'Error recording advance', error)
+  }
+})
+
+router.delete('/:id/advances/:advanceId', authMiddleware, async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return sendErrorResponse(res, 503, 'Database not connected')
+    }
+    const staff = await Staff.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { $pull: { advances: { _id: req.params.advanceId } } },
+      { new: true }
+    )
+    if (!staff) return sendErrorResponse(res, 404, 'Staff member not found')
+    return sendSuccessResponse(res, 200, 'Advance deleted successfully', { staff })
+  } catch (error) {
+    console.error('Delete advance error:', error)
+    return sendErrorResponse(res, 500, 'Error deleting advance', error)
+  }
+})
+
+// --- Salary Payment Recording ---
+router.post('/:id/payments', authMiddleware, async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return sendErrorResponse(res, 503, 'Database not connected')
+    }
+    const { month, year, totalDays, presentDays, halfDays, absentDays,
+            grossSalary, deductions, advanceDeducted, netSalary,
+            status, amountPaid, paidOn, note } = req.body
+
+    if (!month || !year) {
+      return sendErrorResponse(res, 400, 'Month and year are required')
+    }
+
+    // Upsert payment for this month
+    const staff = await Staff.findOne({ _id: req.params.id, userId: req.userId })
+    if (!staff) return sendErrorResponse(res, 404, 'Staff member not found')
+
+    const existingIdx = staff.payments.findIndex(p => p.month === month && p.year === year)
+    const paymentData = {
+      month, year,
+      totalDays: totalDays || 0,
+      presentDays: presentDays || 0,
+      halfDays: halfDays || 0,
+      absentDays: absentDays || 0,
+      grossSalary: grossSalary || 0,
+      deductions: deductions || 0,
+      advanceDeducted: advanceDeducted || 0,
+      netSalary: netSalary || 0,
+      status: status || 'pending',
+      amountPaid: amountPaid || 0,
+      paidOn: paidOn || '',
+      note: note || ''
+    }
+
+    if (existingIdx >= 0) {
+      staff.payments[existingIdx] = { ...staff.payments[existingIdx].toObject(), ...paymentData }
+    } else {
+      staff.payments.push(paymentData)
+    }
+
+    // Mark advances as deducted if advanceDeducted > 0
+    if (advanceDeducted > 0) {
+      let remaining = advanceDeducted
+      staff.advances = staff.advances.map(adv => {
+        if (!adv.deducted && remaining > 0) {
+          remaining -= adv.amount
+          return { ...adv.toObject(), deducted: true }
+        }
+        return adv
+      })
+    }
+
+    await staff.save()
+    return sendSuccessResponse(res, 201, 'Payment recorded successfully', { staff })
+  } catch (error) {
+    console.error('Record payment error:', error)
+    return sendErrorResponse(res, 500, 'Error recording payment', error)
   }
 })
 

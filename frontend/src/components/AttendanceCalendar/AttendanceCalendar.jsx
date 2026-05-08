@@ -2,16 +2,22 @@ import { useState } from 'react'
 import { useModal } from '../../contexts/ModalContext'
 import styles from './AttendanceCalendar.module.scss'
 
-const AttendanceCalendar = ({ staffName, staffId, initialAbsentDates = new Set(), onAbsentDatesUpdate }) => {
+const AttendanceCalendar = ({
+  staffName,
+  staffId,
+  initialAbsentDates = new Set(),
+  initialHalfDayDates = new Set(),
+  onAbsentDatesUpdate
+}) => {
   const { closeModal } = useModal()
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedDate, setSelectedDate] = useState(null)
-  const [selectedRange, setSelectedRange] = useState({ start: null, end: null })
-  const [isRangeMode, setIsRangeMode] = useState(false)
-  
-  const [absentDates, setAbsentDates] = useState(() => {
-    return initialAbsentDates instanceof Set ? new Set(initialAbsentDates) : new Set(initialAbsentDates)
-  })
+
+  const [absentDates, setAbsentDates] = useState(() =>
+    initialAbsentDates instanceof Set ? new Set(initialAbsentDates) : new Set(initialAbsentDates)
+  )
+  const [halfDayDates, setHalfDayDates] = useState(() =>
+    initialHalfDayDates instanceof Set ? new Set(initialHalfDayDates) : new Set(initialHalfDayDates)
+  )
 
   const currentMonth = currentDate.getMonth()
   const currentYear = currentDate.getFullYear()
@@ -20,8 +26,8 @@ const AttendanceCalendar = ({ staffName, staffId, initialAbsentDates = new Set()
   const todayMonth = today.getMonth()
   const todayDay = today.getDate()
 
-  const isCurrentMonthPast = currentYear < todayYear || 
-    (currentYear === todayYear && currentMonth < todayMonth)
+  const isCurrentMonthPast =
+    currentYear < todayYear || (currentYear === todayYear && currentMonth < todayMonth)
 
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1)
   const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0)
@@ -36,157 +42,61 @@ const AttendanceCalendar = ({ staffName, staffId, initialAbsentDates = new Set()
     }
   }
 
-  const formatDateKey = (year, month, day) => {
-    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  }
+  const formatDateKey = (year, month, day) =>
+    `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
-  const isDateAbsent = (year, month, day) => {
-    const dateKey = formatDateKey(year, month, day)
-    return absentDates.has(dateKey)
-  }
-
-  const isDateInRange = (year, month, day) => {
-    if (!selectedRange.start || !selectedRange.end) return false
-    const date = new Date(year, month, day)
-    const start = new Date(selectedRange.start)
-    const end = new Date(selectedRange.end)
-    return date >= start && date <= end
-  }
-
-  const isDateToday = (year, month, day) => {
-    return (
-      year === todayYear &&
-      month === todayMonth &&
-      day === todayDay
-    )
-  }
-
-  const isDatePast = (year, month, day) => {
-    const date = new Date(year, month, day)
-    const todayStart = new Date(todayYear, todayMonth, todayDay)
-    todayStart.setHours(0, 0, 0, 0)
-    date.setHours(0, 0, 0, 0)
-    return date < todayStart
-  }
-
-  const isDateInCurrentMonth = (year, month) => {
-    return year === currentYear && month === currentMonth
-  }
-
-  const isDateInPastMonth = (year, month) => {
-    return year < currentYear || (year === currentYear && month < currentMonth)
-  }
+  const isDateToday = (year, month, day) =>
+    year === todayYear && month === todayMonth && day === todayDay
 
   const isDateSelectable = (year, month, day) => {
-    if (year === currentYear && month === currentMonth) {
-      return true
-    }
-    if (year > currentYear || (year === currentYear && month > currentMonth)) {
-      return true
-    }
+    if (year === currentYear && month === currentMonth) return true
+    if (year > currentYear || (year === currentYear && month > currentMonth)) return true
     return false
   }
 
-  const isDateSelected = (year, month, day) => {
-    if (selectedDate) {
-      const date = new Date(year, month, day)
-      return date.getTime() === selectedDate.getTime()
-    }
-    return false
+  const getDateState = (year, month, day) => {
+    const key = formatDateKey(year, month, day)
+    if (absentDates.has(key)) return 'absent'
+    if (halfDayDates.has(key)) return 'halfday'
+    return 'present'
   }
 
+  // Cycle: present → absent → halfday → present
   const handleDateClick = (year, month, day) => {
-    if (!isDateSelectable(year, month, day)) {
-      return
-    }
+    if (!isDateSelectable(year, month, day)) return
+    const key = formatDateKey(year, month, day)
+    const newAbsent = new Set(absentDates)
+    const newHalfDay = new Set(halfDayDates)
+    const state = getDateState(year, month, day)
 
-    const clickedDate = new Date(year, month, day)
-    const dateKey = formatDateKey(year, month, day)
-
-    // Auto-detect range mode: if a date is already selected and user clicks another date
-    if (selectedDate && clickedDate.getTime() !== selectedDate.getTime()) {
-      // Start range selection
-      const start = selectedDate < clickedDate ? selectedDate : clickedDate
-      const end = selectedDate > clickedDate ? selectedDate : clickedDate
-      setSelectedRange({ start, end })
-      setIsRangeMode(true)
-      setSelectedDate(null)
-    } else if (selectedRange.start && !selectedRange.end) {
-      // Complete range selection
-      const start = selectedRange.start
-      const end = clickedDate > start ? clickedDate : start
-      setSelectedRange({ start, end })
+    if (state === 'present') {
+      newAbsent.add(key)
+      newHalfDay.delete(key)
+    } else if (state === 'absent') {
+      newAbsent.delete(key)
+      newHalfDay.add(key)
     } else {
-      // Start new selection (single or range start)
-      setSelectedDate(clickedDate)
-      setSelectedRange({ start: null, end: null })
-      setIsRangeMode(false)
-    }
-  }
-
-  const handleMarkAbsent = () => {
-    const newAbsentDates = new Set(absentDates)
-
-    if (selectedRange.start && selectedRange.end) {
-      // Mark range as absent
-      const start = selectedRange.start
-      const end = selectedRange.end
-      const current = new Date(start)
-      
-      while (current <= end) {
-        const year = current.getFullYear()
-        const month = current.getMonth()
-        const day = current.getDate()
-        
-        // Only mark dates that are selectable (current month or future months)
-        if (isDateSelectable(year, month, day)) {
-          const dateKey = formatDateKey(year, month, day)
-          if (newAbsentDates.has(dateKey)) {
-            newAbsentDates.delete(dateKey) // Undo absent
-          } else {
-            newAbsentDates.add(dateKey) // Mark absent
-          }
-        }
-        current.setDate(current.getDate() + 1)
-      }
-    } else if (selectedDate) {
-      // Mark single date as absent
-      const year = selectedDate.getFullYear()
-      const month = selectedDate.getMonth()
-      const day = selectedDate.getDate()
-      
-      if (isDateSelectable(year, month, day)) {
-        const dateKey = formatDateKey(year, month, day)
-        if (newAbsentDates.has(dateKey)) {
-          newAbsentDates.delete(dateKey) // Undo absent
-        } else {
-          newAbsentDates.add(dateKey) // Mark absent
-        }
-      }
+      // halfday → present
+      newAbsent.delete(key)
+      newHalfDay.delete(key)
     }
 
-    setAbsentDates(newAbsentDates)
-    setSelectedDate(null)
-    setSelectedRange({ start: null, end: null })
-    setIsRangeMode(false)
-    
+    setAbsentDates(newAbsent)
+    setHalfDayDates(newHalfDay)
+
     if (onAbsentDatesUpdate) {
-      onAbsentDatesUpdate(newAbsentDates)
+      onAbsentDatesUpdate(newAbsent, newHalfDay)
     }
   }
 
   const handlePrevMonth = () => {
-    if (isCurrentMonthPast) {
-      return
-    }
+    if (isCurrentMonthPast) return
     const prevMonth = new Date(currentYear, currentMonth - 1, 1)
-    const prevMonthYear = prevMonth.getFullYear()
-    const prevMonthMonth = prevMonth.getMonth()
-    if (prevMonthYear > todayYear || 
-        (prevMonthYear === todayYear && prevMonthMonth >= todayMonth)) {
+    const pY = prevMonth.getFullYear()
+    const pM = prevMonth.getMonth()
+    if (pY > todayYear || (pY === todayYear && pM >= todayMonth)) {
       setCurrentDate(prevMonth)
     } else {
-      // Navigate to current month if trying to go past
       setCurrentDate(new Date(todayYear, todayMonth, 1))
     }
   }
@@ -199,20 +109,23 @@ const AttendanceCalendar = ({ staffName, staffId, initialAbsentDates = new Set()
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ]
-
   const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
-  const canMarkAbsent = () => {
-    if (selectedRange.start && selectedRange.end) {
-      return true
-    }
-    return selectedDate !== null
+  // Summary counts for the current month
+  const totalDaysInMonth = daysInMonth
+  let absentCount = 0
+  let halfDayCount = 0
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = formatDateKey(currentYear, currentMonth, d)
+    if (absentDates.has(key)) absentCount++
+    else if (halfDayDates.has(key)) halfDayCount++
   }
+  const presentCount = totalDaysInMonth - absentCount - halfDayCount
 
   return (
     <div className={styles.attendanceCalendar}>
       <div className={styles.calendarHeader}>
-        <button 
+        <button
           className={`${styles.monthNavButton} ${isCurrentMonthPast ? styles.disabled : ''}`}
           onClick={handlePrevMonth}
           disabled={isCurrentMonthPast}
@@ -228,95 +141,80 @@ const AttendanceCalendar = ({ staffName, staffId, initialAbsentDates = new Set()
         </button>
       </div>
 
+      {/* Legend */}
+      <div className={styles.legend}>
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendDot} ${styles.legendPresent}`}></span> Present
+        </span>
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendDot} ${styles.legendAbsent}`}></span> Absent
+        </span>
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendDot} ${styles.legendHalfday}`}></span> Half Day
+        </span>
+      </div>
 
       <div className={styles.calendar}>
         <div className={styles.weekDays}>
           {weekDays.map((day) => (
-            <div key={day} className={styles.weekDay}>
-              {day}
-            </div>
+            <div key={day} className={styles.weekDay}>{day}</div>
           ))}
         </div>
 
         <div className={styles.calendarGrid}>
-          {/* Previous month days */}
           {prevMonthDays.map((day) => (
-            <div key={`prev-${day}`} className={styles.calendarDayPrev}>
-              {day}
-            </div>
+            <div key={`prev-${day}`} className={styles.calendarDayPrev}>{day}</div>
           ))}
 
-          {/* Current month days */}
           {Array.from({ length: daysInMonth }, (_, i) => {
             const day = i + 1
-            const dateKey = formatDateKey(currentYear, currentMonth, day)
-            const isAbsent = isDateAbsent(currentYear, currentMonth, day)
+            const state = getDateState(currentYear, currentMonth, day)
             const isToday = isDateToday(currentYear, currentMonth, day)
-            const isSelected = isDateSelected(currentYear, currentMonth, day)
-            const inRange = isDateInRange(currentYear, currentMonth, day)
-            const isPastMonth = isDateInPastMonth(currentYear, currentMonth)
-            const isSelectable = isDateSelectable(currentYear, currentMonth, day)
+            const selectable = isDateSelectable(currentYear, currentMonth, day)
 
             let dayClass = styles.calendarDay
-            if (isAbsent && isSelectable) {
-              dayClass += ` ${styles.absent}`
-            }
-            if (isPastMonth) {
-              dayClass += ` ${styles.pastMonth}`
-            }
-            if (isToday && !isAbsent && !isSelected) {
-              dayClass += ` ${styles.today}`
-            }
-            if (isSelected) {
-              dayClass += ` ${styles.selected}`
-            }
-            if (inRange && selectedRange.start && selectedRange.end) {
-              dayClass += ` ${styles.inRange}`
-            }
-            if (!isSelectable) {
-              dayClass += ` ${styles.disabled}`
-            }
+            if (!selectable) dayClass += ` ${styles.disabled}`
+            if (state === 'absent' && selectable) dayClass += ` ${styles.absent}`
+            if (state === 'halfday' && selectable) dayClass += ` ${styles.halfday}`
+            if (isToday && state === 'present') dayClass += ` ${styles.today}`
 
             return (
               <div
                 key={day}
                 className={dayClass}
                 onClick={() => handleDateClick(currentYear, currentMonth, day)}
-                title={isPastMonth ? 'Cannot modify dates from past months' : ''}
+                title={selectable ? 'Tap to cycle: Present → Absent → Half Day' : 'Past month'}
               >
                 {day}
+                {state === 'halfday' && selectable && (
+                  <span className={styles.halfDayIndicator}>½</span>
+                )}
               </div>
             )
           })}
         </div>
       </div>
 
-      {selectedRange.start && (
-        <div className={styles.rangeInfo}>
-          {selectedRange.end ? (
-            <p>
-              Selected: {selectedRange.start.toLocaleDateString()} - {selectedRange.end.toLocaleDateString()}
-            </p>
-          ) : (
-            <p>Select end date for range</p>
-          )}
+      {/* Summary */}
+      <div className={styles.summaryRow}>
+        <div className={styles.summaryItem}>
+          <span className={styles.summaryNumber}>{presentCount}</span>
+          <span className={styles.summaryLabel}>Present</span>
         </div>
-      )}
+        <div className={styles.summaryItem}>
+          <span className={`${styles.summaryNumber} ${styles.absentNum}`}>{absentCount}</span>
+          <span className={styles.summaryLabel}>Absent</span>
+        </div>
+        <div className={styles.summaryItem}>
+          <span className={`${styles.summaryNumber} ${styles.halfdayNum}`}>{halfDayCount}</span>
+          <span className={styles.summaryLabel}>Half Day</span>
+        </div>
+      </div>
 
       <div className={styles.calendarActions}>
-        <button
-          className={styles.markAbsentButton}
-          onClick={handleMarkAbsent}
-          disabled={!canMarkAbsent()}
-        >
-          {selectedDate && absentDates.has(formatDateKey(
-            selectedDate.getFullYear(),
-            selectedDate.getMonth(),
-            selectedDate.getDate()
-          )) ? 'Undo Absent' : 'Mark Absent'}
-        </button>
+        <p className={styles.tapHint}>Tap a date to cycle: Present → Absent → Half Day</p>
         <button className={styles.cancelButton} onClick={closeModal}>
-          Cancel
+          Done
         </button>
       </div>
     </div>
@@ -324,4 +222,3 @@ const AttendanceCalendar = ({ staffName, staffId, initialAbsentDates = new Set()
 }
 
 export default AttendanceCalendar
-

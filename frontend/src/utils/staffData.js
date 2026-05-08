@@ -168,17 +168,58 @@ export const updateStaffMember = async (staffId, updates) => {
 }
 
 // Update staff attendance via API
-export const updateStaffAttendance = async (staffId, { absentDates, isAbsentToday }) => {
+export const updateStaffAttendance = async (staffId, { absentDates, isAbsentToday, halfDayDates }) => {
   try {
-    const response = await api.patch(`/staff/${staffId}/attendance`, {
-      absentDates: Array.isArray(absentDates) ? absentDates : Array.from(absentDates),
-      isAbsentToday
-    })
+    const payload = {}
+    if (absentDates !== undefined) {
+      payload.absentDates = Array.isArray(absentDates) ? absentDates : Array.from(absentDates)
+    }
+    if (isAbsentToday !== undefined) payload.isAbsentToday = isAbsentToday
+    if (halfDayDates !== undefined) {
+      payload.halfDayDates = Array.isArray(halfDayDates) ? halfDayDates : Array.from(halfDayDates)
+    }
+    const response = await api.patch(`/staff/${staffId}/attendance`, payload)
     // Invalidate staff list and individual staff caches
     invalidateCachePattern('/staff')
     return response.data.staff
   } catch (error) {
     console.error('Error updating attendance:', error)
+    throw error
+  }
+}
+
+// Add a cash advance for a staff member
+export const addAdvance = async (staffId, { amount, date, note }) => {
+  try {
+    const response = await api.post(`/staff/${staffId}/advances`, { amount, date, note })
+    invalidateCachePattern('/staff')
+    return response.data.staff
+  } catch (error) {
+    console.error('Error adding advance:', error)
+    throw error
+  }
+}
+
+// Delete an advance record
+export const deleteAdvance = async (staffId, advanceId) => {
+  try {
+    const response = await api.delete(`/staff/${staffId}/advances/${advanceId}`)
+    invalidateCachePattern('/staff')
+    return response.data.staff
+  } catch (error) {
+    console.error('Error deleting advance:', error)
+    throw error
+  }
+}
+
+// Record / update a salary payment
+export const recordPayment = async (staffId, paymentData) => {
+  try {
+    const response = await api.post(`/staff/${staffId}/payments`, paymentData)
+    invalidateCachePattern('/staff')
+    return response.data.staff
+  } catch (error) {
+    console.error('Error recording payment:', error)
     throw error
   }
 }

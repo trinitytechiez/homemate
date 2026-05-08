@@ -4,6 +4,7 @@ import { useModal } from '../../contexts/ModalContext'
 import { useToast } from '../../contexts/ToastContext'
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation'
 import AttendanceCalendar from '../../components/AttendanceCalendar/AttendanceCalendar'
+import SalaryModal from '../../components/SalaryModal/SalaryModal'
 import EmptyState from '../../components/EmptyState/EmptyState'
 import Shimmer from '../../components/Shimmer'
 import { getStaffMember, updateStaffMember, updateStaffAttendance, deleteStaffMember } from '../../utils/staffData'
@@ -155,6 +156,7 @@ const StaffProfile = () => {
 
   const handleViewAttendanceLog = () => {
     const absentDatesSet = new Set(staff.absentDates || [])
+    const halfDayDatesSet = new Set(staff.halfDayDates || [])
     openModal({
       title: `Attendance log: ${staff.name}`,
       content: (
@@ -162,9 +164,11 @@ const StaffProfile = () => {
           staffName={staff.name} 
           staffId={staff.id || staff._id}
           initialAbsentDates={absentDatesSet}
-          onAbsentDatesUpdate={async (absentDatesSet) => {
+          initialHalfDayDates={halfDayDatesSet}
+          onAbsentDatesUpdate={async (absentDatesSet, halfDayDatesSet) => {
             try {
               const absentDatesArray = Array.from(absentDatesSet)
+              const halfDayDatesArray = Array.from(halfDayDatesSet)
               const today = new Date()
               const formatDateKey = (year, month, day) => {
                 return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -175,11 +179,11 @@ const StaffProfile = () => {
               // Update attendance - this is the critical operation
               await updateStaffAttendance(staff.id || staff._id, {
                 absentDates: absentDatesArray,
+                halfDayDates: halfDayDatesArray,
                 isAbsentToday
               })
               
               // Attendance updated successfully - now try to refresh data
-              // If refresh fails, we don't want to show an error since the update succeeded
               try {
                 const updatedStaff = await getStaffMember(staff.id || staff._id)
                 const mappedStaff = {
@@ -188,7 +192,6 @@ const StaffProfile = () => {
                 }
                 setStaff(mappedStaff)
               } catch (refreshError) {
-                // Silently fail on refresh - the attendance was already updated successfully
                 console.warn('Failed to refresh staff data after attendance update:', refreshError)
               }
             } catch (error) {
@@ -200,6 +203,23 @@ const StaffProfile = () => {
               })
             }
           }}
+        />
+      ),
+      size: 'large'
+    })
+  }
+
+  const handleViewSalary = () => {
+    openModal({
+      title: `Salary & Payments — ${staff.name}`,
+      content: (
+        <SalaryModal
+          staff={staff}
+          onStaffUpdate={(updatedStaff) => {
+            const mapped = { ...updatedStaff, id: updatedStaff._id || updatedStaff.id }
+            setStaff(mapped)
+          }}
+          onClose={closeModal}
         />
       ),
       size: 'large'
@@ -422,9 +442,14 @@ const StaffProfile = () => {
           {errors.name && <span className={styles.errorText}>{errors.name}</span>}
           <p className={styles.addedDate}>Added on {staff.addedOn || 'Unknown date'}</p>
           {!fromStaffList && (
-            <button className={styles.attendanceButton} onClick={handleViewAttendanceLog}>
-              View attendance log
-            </button>
+            <div className={styles.profileActionButtons}>
+              <button className={styles.attendanceButton} onClick={handleViewAttendanceLog}>
+                📅 Attendance
+              </button>
+              <button className={styles.salaryButton} onClick={handleViewSalary}>
+                💰 Salary
+              </button>
+            </div>
           )}
         </div>
 

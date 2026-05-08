@@ -1,0 +1,423 @@
+.modal {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Month selector */
+.monthRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e8e8e8;
+}
+
+.monthLabel {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--dark-color);
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #eee;
+    border-color: #4A90E2;
+  }
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tab {
+  flex: 1;
+  padding: 0.55rem 0.25rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #666;
+
+  &:hover {
+    background: #f0f4ff;
+    border-color: #4A90E2;
+    color: #4A90E2;
+  }
+}
+
+.tabActive {
+  background: #4A90E2 !important;
+  border-color: #4A90E2 !important;
+  color: white !important;
+}
+
+/* Tab content */
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Attendance boxes */
+.attendanceGrid {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.attBox {
+  flex: 1;
+  background: #e8f5e9;
+  border-radius: 10px;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  border: 1px solid #c8e6c9;
+}
+
+.attAbsent {
+  background: #fdecea;
+  border-color: #f5c6cb;
+}
+
+.attHalf {
+  background: #fff8e1;
+  border-color: #ffe082;
+}
+
+.attNum {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #333;
+  line-height: 1;
+}
+
+.attLabel {
+  display: block;
+  font-size: 0.68rem;
+  color: #666;
+  font-weight: 500;
+  margin-top: 0.2rem;
+}
+
+/* Calc card */
+.calcCard {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid #e8e8e8;
+}
+
+.cardTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.75rem 0;
+}
+
+.calcRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+  font-size: 0.88rem;
+  color: #444;
+}
+
+.deductRow {
+  color: #dc3545;
+}
+
+.greenText {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.divider {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 0.4rem 0;
+}
+
+.netRow {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.netAmount {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #1a73e8;
+}
+
+/* Advance deduction input inside calc */
+.advanceDeductRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  gap: 0.5rem;
+}
+
+.advLabel {
+  font-size: 0.83rem;
+  color: #555;
+  flex: 1;
+}
+
+.advInput {
+  width: 90px;
+  padding: 0.3rem 0.5rem;
+  border: 1.5px solid #4A90E2;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: right;
+  color: #333;
+  background: white;
+}
+
+/* WhatsApp button */
+.whatsappBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.8rem;
+  background: #25D366;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #1da851;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* Primary button */
+.primaryBtn {
+  width: 100%;
+  padding: 0.8rem;
+  background: #4A90E2;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #357ABD;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Existing payment badge */
+.existingBadge {
+  padding: 0.6rem 0.85rem;
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #444;
+  background: #f8fff9;
+}
+
+/* Status row */
+.statusRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.statusBtn {
+  flex: 1;
+  padding: 0.55rem 0.25rem;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: white;
+  color: #555;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #4A90E2;
+    color: #4A90E2;
+  }
+}
+
+.statusActive {
+  color: white !important;
+}
+
+/* Form */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.input {
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #333;
+  background: white;
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: #4A90E2;
+  }
+}
+
+/* Advance summary */
+.advanceSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.88rem;
+  color: #555;
+}
+
+.advTotal {
+  font-weight: 800;
+  color: #e0a800;
+  font-size: 1rem;
+}
+
+/* Advance list */
+.advanceList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.advanceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+}
+
+.advDeducted {
+  opacity: 0.6;
+  background: #f8f9fa;
+}
+
+.advInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.advAmount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.advDate {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.advNote {
+  font-size: 0.75rem;
+  color: #666;
+  font-style: italic;
+}
+
+.advActions {
+  display: flex;
+  align-items: center;
+}
+
+.deductedBadge {
+  font-size: 0.72rem;
+  color: #28a745;
+  font-weight: 600;
+  background: #e8f5e9;
+  border-radius: 5px;
+  padding: 0.2rem 0.5rem;
+}
+
+.deleteAdvBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 5px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #fdecea;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.emptyText {
+  text-align: center;
+  color: #aaa;
+  font-size: 0.85rem;
+  padding: 1rem 0;
+  margin: 0;
+}

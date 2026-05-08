@@ -150,11 +150,7 @@ const Dashboard = () => {
   // Memoize update handlers to prevent unnecessary re-renders
   const updateStaffAbsentStatus = useCallback(async (staffId, isAbsentToday) => {
     try {
-      // Update attendance - this is the critical operation
       await updateStaffAttendance(staffId, { isAbsentToday })
-
-      // Attendance updated successfully - now try to refresh data
-      // If refresh fails, we don't want to show an error since the update succeeded
       try {
         const data = await getStaffData(false)
         const mappedData = data.map(staff => ({
@@ -163,7 +159,6 @@ const Dashboard = () => {
         }))
         setStaffData(mappedData)
       } catch (refreshError) {
-        // Silently fail on refresh - the attendance was already updated successfully
         console.warn('Failed to refresh staff data after attendance update:', refreshError)
       }
     } catch (error) {
@@ -172,9 +167,10 @@ const Dashboard = () => {
     }
   }, [showError])
 
-  const updateStaffAbsentDates = useCallback(async (staffId, absentDatesSet) => {
+  const updateStaffAbsentDates = useCallback(async (staffId, absentDatesSet, halfDayDatesSet = new Set()) => {
     try {
       const absentDatesArray = Array.from(absentDatesSet)
+      const halfDayDatesArray = Array.from(halfDayDatesSet)
 
       const today = new Date()
       const formatDateKey = (year, month, day) => {
@@ -183,14 +179,12 @@ const Dashboard = () => {
       const todayKey = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate())
       const isAbsentToday = absentDatesSet.has(todayKey)
 
-      // Update attendance - this is the critical operation
       await updateStaffAttendance(staffId, {
         absentDates: absentDatesArray,
+        halfDayDates: halfDayDatesArray,
         isAbsentToday
       })
 
-      // Attendance updated successfully - now try to refresh data
-      // If refresh fails, we don't want to show an error since the update succeeded
       try {
         const data = await getStaffData(false)
         const mappedData = data.map(staff => ({
@@ -199,7 +193,6 @@ const Dashboard = () => {
         }))
         setStaffData(mappedData)
       } catch (refreshError) {
-        // Silently fail on refresh - the attendance was already updated successfully
         console.warn('Failed to refresh staff data after attendance update:', refreshError)
       }
     } catch (error) {
@@ -259,7 +252,7 @@ const Dashboard = () => {
                   key={staff.id || staff._id}
                   staff={staff}
                   onAbsentToggle={(isAbsent) => updateStaffAbsentStatus(staff.id || staff._id, isAbsent)}
-                  onAbsentDatesUpdate={(absentDates) => updateStaffAbsentDates(staff.id || staff._id, absentDates)}
+                  onAbsentDatesUpdate={(absentDates, halfDayDates) => updateStaffAbsentDates(staff.id || staff._id, absentDates, halfDayDates)}
                 />
               ))
             ) : searchQuery ? (
