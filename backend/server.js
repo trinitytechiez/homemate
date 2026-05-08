@@ -83,6 +83,10 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use((req, res, next) => {
+  console.log(`📡 ${req.method} ${req.path}`)
+  next()
+})
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homemate'
 
@@ -92,10 +96,15 @@ const isAtlasConnection = connectionUri.includes('mongodb+srv://')
 
 if (connectionUri.includes('mongodb+srv://') || connectionUri.includes('mongodb://')) {
   // Check if database name is already in the path
+  // This matches host/dbname? or host/dbname$
   const hasDbName = /\/[^\/\?]+(\?|$)/.test(connectionUri.split('@')[1] || '')
+  
   if (!hasDbName) {
     // Add database name before query string or at the end
+    // First, remove any trailing slash to avoid double slashes
     if (connectionUri.includes('?')) {
+      // Handle the case where URI might look like ...net/?appName=...
+      connectionUri = connectionUri.replace('/?', '?')
       connectionUri = connectionUri.replace('?', '/homemate?')
     } else {
       connectionUri = connectionUri.endsWith('/') 

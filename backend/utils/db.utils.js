@@ -86,10 +86,15 @@ export const ensureMongoConnection = async () => {
         
         if (connectionUri.includes('mongodb+srv://') || connectionUri.includes('mongodb://')) {
           // Check if database name is already in the path
+          // This matches host/dbname? or host/dbname$
           const hasDbName = /\/[^\/\?]+(\?|$)/.test(connectionUri.split('@')[1] || '')
+          
           if (!hasDbName) {
             // Add database name before query string or at the end
+            // First, remove any trailing slash to avoid double slashes
             if (connectionUri.includes('?')) {
+              // Handle the case where URI might look like ...net/?appName=...
+              connectionUri = connectionUri.replace('/?', '?')
               connectionUri = connectionUri.replace('?', '/homemate?')
             } else {
               connectionUri = connectionUri.endsWith('/') 

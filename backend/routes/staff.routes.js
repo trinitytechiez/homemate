@@ -9,6 +9,7 @@ import { sendErrorResponse, sendSuccessResponse } from '../utils/response.utils.
 const router = express.Router()
 
 router.get('/', authMiddleware, async (req, res) => {
+  console.log(`🔍 GET /api/staff - User ID: ${req.userId}`)
   try {
     if (!isMongoConnected()) {
       return sendSuccessResponse(res, 200, 'Staff retrieved successfully', { staff: [] })
