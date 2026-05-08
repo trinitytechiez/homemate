@@ -21,17 +21,17 @@ const About = () => {
         <div className={styles.aboutSection}>
           <div className={styles.logoContainer}>
             <div className={styles.logoCircle}>
-              <span className={styles.logoText}>TT</span>
+              <span className={styles.logoText}>TM</span>
             </div>
           </div>
 
-          <h2 className={styles.teamName}>Trinity Techiez</h2>
+          <h2 className={styles.teamName}>TriMantle</h2>
           <p className={styles.tagline}>Building innovative solutions together</p>
 
           <div className={styles.divider}></div>
 
           <h3 className={styles.sectionTitle}>Developed By</h3>
-          
+
           <div className={styles.teamMembers}>
             <div className={styles.memberCard}>
               <div className={styles.memberAvatar}>
@@ -59,7 +59,7 @@ const About = () => {
 
           <div className={styles.appInfo}>
             <p className={styles.infoText}>
-              HomeMate is a mobile-focused Progressive Web App designed to help you manage your staff, 
+              HomeMate is a mobile-focused Progressive Web App designed to help you manage your staff,
               track attendance, and handle payroll efficiently.
             </p>
             <p className={styles.versionText}>Version 1.0.0</p>
