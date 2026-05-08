@@ -8,12 +8,12 @@ const getApiUrl = () => {
     return import.meta.env.VITE_API_URL
   }
   
-  // In production (deployed), warn if using localhost
+  // In production (deployed)
   if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    console.error('⚠️ VITE_API_URL is not set! Using localhost fallback.')
-    console.error('Please set VITE_API_URL environment variable in Vercel.')
-    // Still use localhost as fallback, but log the error
-    return 'http://localhost:5001/api'
+    // If we're on Vercel, try using a relative path /api
+    // This works if the project is configured as a monorepo with routes
+    console.warn('⚠️ VITE_API_URL is not set! Using relative /api fallback.')
+    return '/api'
   }
   
   // Development - use localhost

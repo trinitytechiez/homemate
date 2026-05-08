@@ -342,8 +342,9 @@ const Login = () => {
               <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
                 Please check:
                 <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
-                  <li>Backend server is running on port 5001</li>
-                  <li>API URL: {api.defaults.baseURL}</li>
+                  {import.meta.env.DEV && <li>Backend server is running (usually on port 5001)</li>}
+                  <li>API URL is correct: {api.defaults.baseURL}</li>
+                  <li>You have a stable internet connection</li>
                   <li>No CORS errors in browser console</li>
                 </ul>
               </p>
