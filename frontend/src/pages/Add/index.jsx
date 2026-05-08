@@ -21,7 +21,8 @@ const Add = () => {
     dob: '',
     monthlySalary: '',
     currency: 'INR',
-    payCycle: 'Monthly'
+    payCycle: 'Monthly',
+    visitingTime: '9:00 AM'
   })
   const [errors, setErrors] = useState({})
 
@@ -31,7 +32,6 @@ const Add = () => {
       ...prev,
       [name]: value
     }))
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -50,16 +50,16 @@ const Add = () => {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
     const firstNameError = validateName(formData.firstName, 'First Name')
     if (firstNameError) newErrors.firstName = firstNameError
-    
+
     const lastNameError = validateName(formData.lastName, 'Last Name')
     if (lastNameError) newErrors.lastName = lastNameError
-    
+
     const mobileError = validateMobileNumber(formData.mobileNumber)
     if (mobileError) newErrors.mobileNumber = mobileError
-    
+
     const locationError = validateRequired(formData.location, 'Location')
     if (locationError) newErrors.location = locationError
 
@@ -73,14 +73,12 @@ const Add = () => {
     }
 
     setIsSubmitting(true)
-    
+
     let didNavigate = false
 
     try {
-      // Combine first and last name
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim()
-      
-      // Create staff member data
+
       const newStaff = {
         name: fullName,
         firstName: formData.firstName.trim(),
@@ -88,41 +86,35 @@ const Add = () => {
         phoneNumber: `+91${formData.mobileNumber}`,
         location: formData.location.trim(),
         dob: formData.dob || '',
-        role: '', // Will be set in next step or default
+        role: '',
         monthlySalary: parseInt(formData.monthlySalary) || 0,
         currency: formData.currency || 'INR',
         payCycle: formData.payCycle || 'Monthly',
         paidLeaves: 0,
-        visitingTime: '9.00 AM'
+        visitingTime: formData.visitingTime
       }
 
-      // Add via API
       await addStaffMember(newStaff)
-      
-      // Show success toast
+
       showSuccess(`Staff member "${fullName}" has been added successfully!`)
 
-      // Immediately navigate to dashboard (SPA navigation)
       didNavigate = true
       navigate('/dashboard', { replace: true })
       return
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to add staff member. Please try again.'
-      
-      // Check if it's a database connection error
+
       if (error.response?.status === 503) {
         showError('Database not connected. Please connect to MongoDB to create staff members.')
       } else {
         showError(errorMessage)
       }
     } finally {
-      // Only reset submitting state if we did not navigate away (avoid setState on unmounted)
       if (!didNavigate) setIsSubmitting(false)
     }
   }
 
   const handleCancel = () => {
-    // Clear form and navigate back
     setFormData({
       firstName: '',
       lastName: '',
@@ -131,13 +123,12 @@ const Add = () => {
       dob: '',
       monthlySalary: '',
       currency: 'INR',
-      payCycle: 'Monthly'
+      payCycle: 'Monthly',
+      visitingTime: '9:00 AM'
     })
     setErrors({})
     navigate(-1)
   }
-
-  // Loading state is handled inline with form
 
   return (
     <div className={styles.addContainer}>
@@ -150,7 +141,7 @@ const Add = () => {
         {/* Form Section */}
         <div className={styles.formSection}>
           <h2 className={styles.sectionTitle}>Personal details</h2>
-          
+
           <form className={styles.addForm}>
             <div className={styles.formGroup}>
               <label htmlFor="firstName" className={`${styles.label} ${errors.firstName ? styles.labelError : ''}`}>
@@ -284,6 +275,33 @@ const Add = () => {
               >
                 <option value="Monthly">Monthly</option>
                 <option value="Weekly">Weekly</option>
+              </select>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="visitingTime" className={styles.label}>
+                Visiting Time
+              </label>
+              <select
+                id="visitingTime"
+                name="visitingTime"
+                value={formData.visitingTime}
+                onChange={handleChange}
+                className={styles.input}
+              >
+                <option value="6:00 AM">6:00 AM</option>
+                <option value="7:00 AM">7:00 AM</option>
+                <option value="8:00 AM">8:00 AM</option>
+                <option value="9:00 AM">9:00 AM</option>
+                <option value="10:00 AM">10:00 AM</option>
+                <option value="11:00 AM">11:00 AM</option>
+                <option value="12:00 PM">12:00 PM</option>
+                <option value="1:00 PM">1:00 PM</option>
+                <option value="2:00 PM">2:00 PM</option>
+                <option value="3:00 PM">3:00 PM</option>
+                <option value="4:00 PM">4:00 PM</option>
+                <option value="5:00 PM">5:00 PM</option>
+                <option value="6:00 PM">6:00 PM</option>
               </select>
             </div>
           </form>
