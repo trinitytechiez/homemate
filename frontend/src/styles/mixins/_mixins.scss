@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // SCSS Mixins for common patterns
 
 // Button Mixins
@@ -16,7 +18,7 @@
   gap: $spacing-sm;
   min-height: 48px;
   outline: none;
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -27,13 +29,13 @@
   @include button-base;
   background-color: $primary;
   color: $text-inverse;
-  
+
   &:hover:not(:disabled) {
     background-color: $primary-hover;
     transform: translateY(-1px);
     box-shadow: $shadow-md;
   }
-  
+
   &:active:not(:disabled) {
     transform: translateY(0);
   }
@@ -44,12 +46,12 @@
   background-color: $bg-card;
   color: $text-primary;
   border: 2px solid $border-primary;
-  
+
   &:hover:not(:disabled) {
     background-color: $bg-secondary;
     border-color: $border-focus;
   }
-  
+
   &:active:not(:disabled) {
     transform: scale(0.98);
   }
@@ -59,7 +61,7 @@
   @include button-base;
   background-color: transparent;
   color: $text-primary;
-  
+
   &:hover:not(:disabled) {
     background-color: $bg-secondary;
   }
@@ -69,9 +71,9 @@
   @include button-base;
   background-color: $error;
   color: $text-inverse;
-  
+
   &:hover:not(:disabled) {
-    background-color: darken($error, 10%);
+    background-color: color.adjust($error, $lightness: -10%);
     transform: translateY(-1px);
     box-shadow: $shadow-md;
   }
@@ -89,16 +91,16 @@
   color: $text-primary;
   transition: $transition-normal;
   outline: none;
-  
+
   &::placeholder {
     color: $text-tertiary;
   }
-  
+
   &:focus {
     border-color: $border-focus;
     box-shadow: 0 0 0 3px $primary-light;
   }
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -108,7 +110,7 @@
 
 @mixin input-error {
   border-color: $error;
-  
+
   &:focus {
     border-color: $error;
     box-shadow: 0 0 0 3px rgba($error, 0.1);
@@ -217,15 +219,15 @@
     width: 8px;
     height: 8px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: $bg-secondary;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: $border-primary;
     border-radius: $radius-full;
-    
+
     &:hover {
       background: $text-tertiary;
     }
@@ -235,11 +237,12 @@
 // Animation Mixins
 @mixin fade-in($duration: 0.3s) {
   animation: fadeIn $duration ease-in;
-  
+
   @keyframes fadeIn {
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -248,16 +251,16 @@
 
 @mixin slide-up($duration: 0.3s) {
   animation: slideUp $duration ease-out;
-  
+
   @keyframes slideUp {
     from {
       transform: translateY(20px);
       opacity: 0;
     }
+
     to {
       transform: translateY(0);
       opacity: 1;
     }
   }
 }
-
