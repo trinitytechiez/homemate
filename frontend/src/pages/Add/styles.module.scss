@@ -56,11 +56,11 @@
 }
 
 .labelError {
-  color: var(--danger-color);
+  color: var(--error);
 }
 
 .required {
-  color: var(--danger-color);
+  color: var(--error);
   margin-left: 2px;
 }
 
@@ -132,16 +132,16 @@
 }
 
 .inputError {
-  border-color: var(--danger-color);
+  border-color: var(--error);
 
   &:focus {
-    border-color: var(--danger-color);
+    border-color: var(--error);
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
   }
 }
 
 .errorText {
-  color: var(--danger-color);
+  color: var(--error);
   font-size: 0.85rem;
   margin-top: -0.25rem;
 }

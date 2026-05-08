@@ -581,7 +581,7 @@ const StaffProfile = () => {
                 name="payCycle"
                 value={formData.payCycle}
                 onChange={handleChange}
-                className={styles.detailInput}
+                className={`${styles.detailInput} ${errors.payCycle ? styles.inputError : ''}`}
               >
                 <option value="Monthly">Monthly</option>
                 <option value="Weekly">Weekly</option>
@@ -598,7 +598,7 @@ const StaffProfile = () => {
                 name="paidLeaves"
                 value={formData.paidLeaves}
                 onChange={handleChange}
-                className={styles.detailInput}
+                className={`${styles.detailInput} ${errors.paidLeaves ? styles.inputError : ''}`}
                 min="0"
               />
             ) : (
@@ -613,7 +613,7 @@ const StaffProfile = () => {
                 name="visitingTime"
                 value={formData.visitingTime}
                 onChange={handleChange}
-                className={styles.detailInput}
+                className={`${styles.detailInput} ${errors.visitingTime ? styles.inputError : ''}`}
                 placeholder="10.30 AM"
               />
             ) : (

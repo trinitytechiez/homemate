@@ -22,6 +22,7 @@ const Add = () => {
     monthlySalary: '',
     currency: 'INR',
     payCycle: 'Monthly',
+    paidLeaves: '',
     visitingTime: '9:00 AM'
   })
   const [errors, setErrors] = useState({})
@@ -90,7 +91,7 @@ const Add = () => {
         monthlySalary: parseInt(formData.monthlySalary) || 0,
         currency: formData.currency || 'INR',
         payCycle: formData.payCycle || 'Monthly',
-        paidLeaves: 0,
+        paidLeaves: parseInt(formData.paidLeaves) || 0,
         visitingTime: formData.visitingTime
       }
 
@@ -124,6 +125,7 @@ const Add = () => {
       monthlySalary: '',
       currency: 'INR',
       payCycle: 'Monthly',
+      paidLeaves: '',
       visitingTime: '9:00 AM'
     })
     setErrors({})
@@ -276,6 +278,22 @@ const Add = () => {
                 <option value="Monthly">Monthly</option>
                 <option value="Weekly">Weekly</option>
               </select>
+            </div>
+            
+            <div className={styles.formGroup}>
+              <label htmlFor="paidLeaves" className={styles.label}>
+                Paid Leaves (per month)
+              </label>
+              <input
+                type="number"
+                id="paidLeaves"
+                name="paidLeaves"
+                value={formData.paidLeaves}
+                onChange={handleChange}
+                className={styles.input}
+                placeholder="0"
+                min="0"
+              />
             </div>
 
             <div className={styles.formGroup}>
