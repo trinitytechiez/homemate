@@ -25,7 +25,7 @@ const About = () => {
             </div>
           </div>
 
-          <h2 className={styles.teamName}>TriMantle</h2>
+          <h2 className={styles.teamName}>Trimantle</h2>
           <p className={styles.tagline}>Building innovative solutions together</p>
 
           <div className={styles.divider}></div>
