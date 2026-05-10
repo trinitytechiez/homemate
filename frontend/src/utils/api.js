@@ -44,9 +44,8 @@ api.interceptors.request.use(
     }
     
     // If signal is provided, use it for cancellation
-    // Otherwise, create a new AbortController if not already present
-    if (!config.signal && !config.signal?.aborted) {
-      // Signal will be provided by components using useRequestCancellation
+    if (config.signal && config.signal.aborted) {
+      console.warn('⚠️ Request aborted before sending:', config.url)
     }
     
     // Log request in development
