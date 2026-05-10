@@ -22,6 +22,7 @@ const Add = () => {
     monthlySalary: '',
     currency: 'INR',
     payCycle: 'Monthly',
+    role: '',
     paidLeaves: '',
     visitingTime: '9:00 AM'
   })
@@ -64,6 +65,10 @@ const Add = () => {
     const locationError = validateRequired(formData.location, 'Location')
     if (locationError) newErrors.location = locationError
 
+    // Category (role) is now optional
+    // const roleError = validateRequired(formData.role, 'Category')
+    // if (roleError) newErrors.role = roleError
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -87,7 +92,7 @@ const Add = () => {
         phoneNumber: `+91${formData.mobileNumber}`,
         location: formData.location.trim(),
         dob: formData.dob || '',
-        role: '',
+        role: formData.role.trim(),
         monthlySalary: parseInt(formData.monthlySalary) || 0,
         currency: formData.currency || 'INR',
         payCycle: formData.payCycle || 'Monthly',
@@ -125,6 +130,7 @@ const Add = () => {
       monthlySalary: '',
       currency: 'INR',
       payCycle: 'Monthly',
+      role: '',
       paidLeaves: '',
       visitingTime: '9:00 AM'
     })
@@ -280,6 +286,22 @@ const Add = () => {
               </select>
             </div>
             
+            <div className={styles.formGroup}>
+              <label htmlFor="role" className={`${styles.label} ${errors.role ? styles.labelError : ''}`}>
+                Category<span className={styles.required}>*</span>
+              </label>
+              <input
+                type="text"
+                id="role"
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className={`${styles.input} ${errors.role ? styles.inputError : ''}`}
+                placeholder="e.g. Cook, Driver, Maid"
+              />
+              {errors.role && <span className={styles.errorText}>{errors.role}</span>}
+            </div>
+
             <div className={styles.formGroup}>
               <label htmlFor="paidLeaves" className={styles.label}>
                 Paid Leaves (per month)

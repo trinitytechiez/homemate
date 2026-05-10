@@ -20,7 +20,7 @@ const StaffProfile = () => {
   const location = useLocation()
   const { id } = useParams()
   const { openModal, closeModal } = useModal()
-  const { showSuccess } = useToast()
+  const { showSuccess, showError } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   
@@ -284,8 +284,10 @@ const StaffProfile = () => {
     const phoneError = validateMobileNumber(formData.phoneNumber)
     if (phoneError) newErrors.phoneNumber = phoneError
     
-    const roleError = validateRequired(formData.role, 'Category')
-    if (roleError) newErrors.role = roleError
+    
+    // Category (role) is now optional to prevent blocking the user
+    // const roleError = validateRequired(formData.role, 'Category')
+    // if (roleError) newErrors.role = roleError
     
     const salaryError = validateRequired(formData.monthlySalary, 'Pay')
     if (salaryError) newErrors.monthlySalary = salaryError
@@ -325,11 +327,8 @@ const StaffProfile = () => {
       showSuccess('Staff member updated successfully!')
     } catch (error) {
       console.error('Error updating staff:', error)
-      openModal({
-        title: 'Error',
-        content: <p>Failed to update staff member. Please try again.</p>,
-        size: 'small'
-      })
+      const errorMessage = error.response?.data?.message || 'Failed to update staff member. Please try again.'
+      showError(errorMessage)
     }
   }
 

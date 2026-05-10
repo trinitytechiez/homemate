@@ -50,6 +50,7 @@ export const validateEmail = (email) => {
  * Validate required field
  */
 export const validateRequired = (value, fieldName = 'This field') => {
+  if (value === 0 || value === false) return ''
   if (!value || !value.toString().trim()) {
     return `${fieldName} is required`
   }
