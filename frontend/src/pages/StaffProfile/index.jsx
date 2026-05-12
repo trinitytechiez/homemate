@@ -113,7 +113,7 @@ const StaffProfile = () => {
     }
 
     loadData()
-  }, [id, navigate, openModal, signal, trackRequest, untrackRequest, staff])
+  }, [id, navigate, openModal, signal, trackRequest, untrackRequest])
 
   const [formData, setFormData] = useState({
     name: staff?.name || '',
@@ -272,21 +272,21 @@ const StaffProfile = () => {
 
   const handleSave = async () => {
     const newErrors = {}
-    
+
     const nameError = validateName(formData.name, 'Name')
     if (nameError) newErrors.name = nameError
-    
+
     const locationError = validateRequired(formData.location, 'Location')
     if (locationError) newErrors.location = locationError
-    
+
     const phoneError = validateMobileNumber(formData.phoneNumber)
     if (phoneError) newErrors.phoneNumber = phoneError
-    
-    
+
+
     // Category (role) is now optional to prevent blocking the user
     // const roleError = validateRequired(formData.role, 'Category')
     // if (roleError) newErrors.role = roleError
-    
+
     const salaryError = validateRequired(formData.monthlySalary, 'Pay')
     if (salaryError) newErrors.monthlySalary = salaryError
 
@@ -300,8 +300,8 @@ const StaffProfile = () => {
       const updateData = {
         name: formData.name.trim(),
         location: formData.location.trim(),
-        phoneNumber: formData.phoneNumber.startsWith('+91') 
-          ? formData.phoneNumber 
+        phoneNumber: formData.phoneNumber.startsWith('+91')
+          ? formData.phoneNumber
           : `+91${formData.phoneNumber}`,
         dob: formData.dob || '',
         role: formData.role || '',
@@ -312,16 +312,33 @@ const StaffProfile = () => {
         visitingTime: formData.visitingTime || ''
       }
 
+      console.log('📤 Sending update request with data:', updateData)
       const updatedStaff = await updateStaffMember(staff.id || staff._id, updateData)
+      console.log('📥 Received updated staff:', updatedStaff)
+
       // Map MongoDB _id to id for compatibility
       const mappedStaff = {
         ...updatedStaff,
         id: updatedStaff._id || updatedStaff.id
       }
+      console.log('🔄 Mapped staff object:', mappedStaff)
+
       setStaff(mappedStaff)
+      setFormData({
+        name: mappedStaff.name || '',
+        location: mappedStaff.location || '',
+        phoneNumber: mappedStaff.phoneNumber?.replace('+91', '') || '',
+        dob: mappedStaff.dob || '',
+        role: mappedStaff.role || '',
+        monthlySalary: mappedStaff.monthlySalary || '',
+        currency: mappedStaff.currency || 'INR',
+        payCycle: mappedStaff.payCycle || 'Monthly',
+        paidLeaves: mappedStaff.paidLeaves || '',
+        visitingTime: mappedStaff.visitingTime || ''
+      })
       setIsEditing(false)
       setErrors({})
-      
+
       showSuccess('Staff member updated successfully!')
     } catch (error) {
       console.error('Error updating staff:', error)
