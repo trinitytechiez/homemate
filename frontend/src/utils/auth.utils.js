@@ -7,7 +7,7 @@
 export const isAuthenticated = () => {
   try {
     const token = localStorage.getItem('token')
-    return token && token.trim().length > 0
+    return !!(token && token.trim().length > 0)
   } catch (error) {
     console.error('Token check error:', error)
     return false
