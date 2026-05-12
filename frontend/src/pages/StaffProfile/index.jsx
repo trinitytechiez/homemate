@@ -59,21 +59,19 @@ const StaffProfile = () => {
     }
 
     const loadData = async () => {
-      // Check cache synchronously first
+      // Check cache synchronously first for instant UI update
       const cached = getCachedData(`/staff/${id}`, {}, 30 * 1000)
       if (cached !== null) {
-        // If cached, use it immediately without loading state
         const mappedStaff = {
           ...cached,
           id: cached._id || cached.id
         }
         setStaff(mappedStaff)
         setIsLoading(false)
-        return
+      } else {
+        // If not cached, show shimmer
+        setIsLoading(true)
       }
-
-      // If not cached, show shimmer and fetch
-      setIsLoading(true)
 
       try {
         const staffData = await getStaffMember(id, true, signal, trackRequest, untrackRequest)

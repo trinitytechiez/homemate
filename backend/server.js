@@ -151,18 +151,17 @@ if (nodeVersion && parseInt(nodeVersion) < 18) {
   console.warn('')
 }
 
-// Optimized options for Vercel serverless functions
+// Optimized options for MongoDB connection
 const mongooseOptions = {
-  serverSelectionTimeoutMS: 5000, // Reduced for faster serverless response
+  serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
-  connectTimeoutMS: 10000, // Increased for SSL handshake
-  maxPoolSize: 1, // Reduced for serverless (each function instance)
-  minPoolSize: 0, // Allow no connections when idle
+  connectTimeoutMS: 10000,
+  maxPoolSize: process.env.VERCEL === '1' ? 1 : 10, // Increased for non-serverless environments
+  minPoolSize: 0,
   maxIdleTimeMS: 30000,
   heartbeatFrequencyMS: 10000,
   retryWrites: true,
   retryReads: true,
-  // Important for serverless: buffer commands if not connected
   bufferCommands: true
 }
 

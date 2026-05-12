@@ -129,7 +129,7 @@ export const ensureMongoConnection = async () => {
           serverSelectionTimeoutMS: 5000,
           socketTimeoutMS: 45000,
           connectTimeoutMS: 10000,
-          maxPoolSize: 1,
+          maxPoolSize: process.env.VERCEL === '1' ? 1 : 10, // Increased for non-serverless environments
           minPoolSize: 0,
           maxIdleTimeMS: 30000,
           heartbeatFrequencyMS: 10000,

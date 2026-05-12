@@ -59,9 +59,8 @@ const Dashboard = () => {
 
       console.log('📊 Dashboard: loadData called')
       try {
-        // Always fetch from API (bypass cache) to get fresh data
-        console.log('📊 Dashboard: Calling getStaffData with useCache=false')
-        const data = await getStaffData(false, signal, trackRequest, untrackRequest)
+        // Use cache for faster loading (stale-while-revalidate)
+        const data = await getStaffData(true, signal, trackRequest, untrackRequest)
         console.log('📊 Dashboard: Received data', data)
         // Check if component is still mounted and request wasn't cancelled
         if (isMounted && !signal?.aborted) {

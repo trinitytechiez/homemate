@@ -255,7 +255,10 @@ export const getStaffMember = async (staffId, useCache = true, signal = null, tr
       const response = await api.get(`/staff/${staffId}`, { signal })
       // Untrack when request completes successfully
       if (untrackRequest) untrackRequest(requestId)
-      return response.data.staff
+      const data = response.data.staff
+      // Cache the result
+      setCachedData(`/staff/${staffId}`, {}, data, 30 * 1000)
+      return data
     } catch (error) {
       // Untrack when request fails or is cancelled
       if (untrackRequest) untrackRequest(requestId)
@@ -272,7 +275,15 @@ export const getStaffMember = async (staffId, useCache = true, signal = null, tr
     // Check cache first synchronously - if cached, return immediately without making request
     const cached = getCachedData(`/staff/${staffId}`, {}, 30 * 1000)
     if (cached !== null) {
-      // Return cached data immediately (synchronously)
+      // Return cached data immediately (synchronously wrapped in Promise)
+      // But still make API call in background to refresh cache
+      setTimeout(() => {
+        if (!signal?.aborted) {
+          requestFn().catch(() => {
+            // Silently fail background refresh
+          })
+        }
+      }, 0)
       return Promise.resolve(cached)
     }
     
@@ -281,8 +292,8 @@ export const getStaffMember = async (staffId, useCache = true, signal = null, tr
       throw new Error('Request cancelled')
     }
     
-    // Cache for 30 seconds for individual staff (less frequently updated)
-    return cachedRequest(`/staff/${staffId}`, {}, requestFn, 30 * 1000)
+    // Cache for 30 seconds for individual staff
+    return requestFn()
   }
   
   return requestFn()

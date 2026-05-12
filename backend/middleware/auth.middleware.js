@@ -12,18 +12,9 @@ const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret')
     
-    // Check if MongoDB is connected
-    if (mongoose.connection.readyState === 1) {
-      const user = await User.findById(decoded.userId).select('-password')
-      if (!user) {
-        return res.status(401).json({ message: 'User not found' })
-      }
-      req.user = user
-      req.userId = decoded.userId
-    } else {
-      // If MongoDB not connected, just set userId from token
-      req.userId = decoded.userId
-    }
+    // Set userId directly from decoded token for better performance
+    // Most routes only need req.userId, and user-specific routes fetch the user themselves
+    req.userId = decoded.userId
 
     next()
   } catch (error) {
