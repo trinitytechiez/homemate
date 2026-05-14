@@ -285,7 +285,7 @@ const Add = () => {
                 <option value="Weekly">Weekly</option>
               </select>
             </div>
-            
+
             <div className={styles.formGroup}>
               <label htmlFor="role" className={`${styles.label} ${errors.role ? styles.labelError : ''}`}>
                 Category<span className={styles.required}>*</span>
