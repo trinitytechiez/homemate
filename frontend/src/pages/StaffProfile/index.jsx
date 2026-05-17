@@ -23,10 +23,10 @@ const StaffProfile = () => {
   const { showSuccess, showError } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  
+
   // Check if accessed from Staff list page (hide attendance log button)
   const fromStaffList = location.state?.fromStaffList || false
-  
+
   // Get staff data from location state or fetch from API
   const [staff, setStaff] = useState(location.state?.staff || null)
 
@@ -35,7 +35,7 @@ const StaffProfile = () => {
   // Check authentication and load staff data on mount
   useEffect(() => {
     const token = localStorage.getItem('token')
-    
+
     if (!token || token.trim().length === 0) {
       navigate('/login', { replace: true })
       return
@@ -116,21 +116,21 @@ const StaffProfile = () => {
   }, [id, navigate, openModal, signal, trackRequest, untrackRequest])
 
   const [formData, setFormData] = useState({
-    name: staff?.name || '',
-    location: staff?.location || '',
-    phoneNumber: staff?.phoneNumber?.replace('+91', '') || '',
-    dob: staff?.dob || '',
-    role: staff?.role || '',
-    monthlySalary: staff?.monthlySalary || '',
-    currency: staff?.currency || 'INR',
-    payCycle: staff?.payCycle || 'Monthly',
-    paidLeaves: staff?.paidLeaves || '',
-    visitingTime: staff?.visitingTime || ''
+    name: '',
+    location: '',
+    phoneNumber: '',
+    dob: '',
+    role: '',
+    monthlySalary: '',
+    currency: 'INR',
+    payCycle: 'Monthly',
+    paidLeaves: '',
+    visitingTime: ''
   })
 
-  // Update formData when staff changes
+  // Initialize formData when staff first loads
   useEffect(() => {
-    if (staff) {
+    if (staff && !isEditing) {
       setFormData({
         name: staff.name || '',
         location: staff.location || '',
@@ -144,7 +144,7 @@ const StaffProfile = () => {
         visitingTime: staff.visitingTime || ''
       })
     }
-  }, [staff])
+  }, [staff?.id])
 
   const [errors, setErrors] = useState({})
 
@@ -158,8 +158,8 @@ const StaffProfile = () => {
     openModal({
       title: `Attendance log: ${staff.name}`,
       content: (
-        <AttendanceCalendar 
-          staffName={staff.name} 
+        <AttendanceCalendar
+          staffName={staff.name}
           staffId={staff.id || staff._id}
           initialAbsentDates={absentDatesSet}
           initialHalfDayDates={halfDayDatesSet}
@@ -173,14 +173,14 @@ const StaffProfile = () => {
               }
               const todayKey = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate())
               const isAbsentToday = absentDatesSet.has(todayKey)
-              
+
               // Update attendance - this is the critical operation
               await updateStaffAttendance(staff.id || staff._id, {
                 absentDates: absentDatesArray,
                 halfDayDates: halfDayDatesArray,
                 isAbsentToday
               })
-              
+
               // Attendance updated successfully - now try to refresh data
               try {
                 const updatedStaff = await getStaffMember(staff.id || staff._id)
@@ -237,12 +237,12 @@ const StaffProfile = () => {
       phoneNumber: staff.phoneNumber?.replace('+91', '') || '',
       dob: staff.dob || '',
       role: staff.role || '',
-        monthlySalary: staff.monthlySalary || '',
-        currency: staff.currency || 'INR',
-        payCycle: staff.payCycle || 'Monthly',
-        paidLeaves: staff.paidLeaves || '',
-        visitingTime: staff.visitingTime || ''
-      })
+      monthlySalary: staff.monthlySalary || '',
+      currency: staff.currency || 'INR',
+      payCycle: staff.payCycle || 'Monthly',
+      paidLeaves: staff.paidLeaves || '',
+      visitingTime: staff.visitingTime || ''
+    })
     setErrors({})
   }
 
@@ -581,8 +581,8 @@ const StaffProfile = () => {
               </div>
             ) : (
               <span className={styles.detailValue}>
-                {staff.monthlySalary 
-                  ? `${getCurrencySymbol(staff.currency || 'INR')} ${staff.monthlySalary}` 
+                {staff.monthlySalary
+                  ? `${getCurrencySymbol(staff.currency || 'INR')} ${staff.monthlySalary}`
                   : <span style={{ color: '#999999', fontStyle: 'italic' }}>Not set</span>}
               </span>
             )}
