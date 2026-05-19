@@ -12,16 +12,54 @@ export const useRequestCancellation = () => {
   const location = useLocation()
   const abortControllerRef = useRef(new AbortController())
   const ongoingRequestsRef = useRef(new Set())
-  // Track whether we've initialized once - we should NOT abort initial controller on mount
-  const hasInitializedRef = useRef(false)
+  // Track the previous pathname to detect actual route changes (not StrictMode remounts)
+  const prevPathnameRef = useRef(location.pathname)
 
   useEffect(() => {
-    // On first mount, just mark initialized and don't replace/abort the controller.
-    // Replacing the controller on initial mount caused in-flight requests started
-    // immediately after mount to be cancelled by the scheduled abort for the "old" controller.
-    if (!hasInitializedRef.current) {
-      hasInitializedRef.current = true
-      console.log('🔄 useRequestCancellation: Initial controller initialized', {
+    // Check if pathname actually changed (not just StrictMode remount)
+    const pathnameChanged = prevPathnameRef.current !== location.pathname
+
+    if (pathnameChanged) {
+      console.log('🔄 useRequestCancellation: Route changed, new controller created', {
+        oldPathname: prevPathnameRef.current,
+        newPathname: location.pathname,
+        ongoingRequests: ongoingRequestsRef.current.size
+      })
+
+      // For actual route changes, replace the controller and abort old requests after a small delay
+      const oldController = abortControllerRef.current
+      abortControllerRef.current = new AbortController()
+      prevPathnameRef.current = location.pathname
+
+      // Use setTimeout to avoid blocking navigation
+      // Abort old requests AFTER a small delay to allow new requests to be tracked
+      const timeoutId = setTimeout(() => {
+        // Only cancel ongoing requests from the OLD controller
+        // New requests should already be using the new controller
+        if (ongoingRequestsRef.current.size > 0) {
+          console.log('🚫 useRequestCancellation: Aborting old requests', {
+            count: ongoingRequestsRef.current.size
+          })
+          oldController.abort()
+          ongoingRequestsRef.current.clear()
+        }
+      }, 100) // Small delay to allow new requests to start
+
+      // Cleanup: cancel only ongoing requests on unmount or before next effect run
+      return () => {
+        clearTimeout(timeoutId)
+        // Only abort if there are actually ongoing requests
+        if (ongoingRequestsRef.current.size > 0) {
+          console.log('🚫 useRequestCancellation: Cleanup - aborting requests', {
+            count: ongoingRequestsRef.current.size
+          })
+          abortControllerRef.current.abort()
+          ongoingRequestsRef.current.clear()
+        }
+      }
+    } else {
+      // Same pathname (StrictMode remount) - don't create new controller
+      console.log('🔄 useRequestCancellation: Same pathname, keeping existing controller', {
         pathname: location.pathname
       })
 
@@ -34,43 +72,6 @@ export const useRequestCancellation = () => {
           abortControllerRef.current.abort()
           ongoingRequestsRef.current.clear()
         }
-      }
-    }
-
-    // For subsequent route changes, replace the controller and abort old requests after a small delay
-    const oldController = abortControllerRef.current
-    abortControllerRef.current = new AbortController()
-    
-    console.log('🔄 useRequestCancellation: Route changed, new controller created', {
-      pathname: location.pathname,
-      oldControllerAborted: oldController.signal.aborted,
-      ongoingRequests: ongoingRequestsRef.current.size
-    })
-
-    // Use setTimeout to avoid blocking navigation
-    // Abort old requests AFTER a small delay to allow new requests to be tracked
-    const timeoutId = setTimeout(() => {
-      // Only cancel ongoing requests from the OLD controller
-      // New requests should already be using the new controller
-      if (ongoingRequestsRef.current.size > 0) {
-        console.log('🚫 useRequestCancellation: Aborting old requests', {
-          count: ongoingRequestsRef.current.size
-        })
-        oldController.abort()
-        ongoingRequestsRef.current.clear()
-      }
-    }, 100) // Small delay to allow new requests to start
-
-    // Cleanup: cancel only ongoing requests on unmount or before next effect run
-    return () => {
-      clearTimeout(timeoutId)
-      // Only abort if there are actually ongoing requests
-      if (ongoingRequestsRef.current.size > 0) {
-        console.log('🚫 useRequestCancellation: Cleanup - aborting requests', {
-          count: ongoingRequestsRef.current.size
-        })
-        abortControllerRef.current.abort()
-        ongoingRequestsRef.current.clear()
       }
     }
   }, [location.pathname])
