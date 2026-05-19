@@ -27,12 +27,12 @@ const StaffProfile = () => {
   // Check if accessed from Staff list page (hide attendance log button)
   const fromStaffList = location.state?.fromStaffList || false
 
-  // Get staff data from location state or fetch from API
-  const [staff, setStaff] = useState(location.state?.staff || null)
+  // Staff data state - initialized empty, always fetched fresh from API using URL params
+  const [staff, setStaff] = useState(null)
 
   const { signal, trackRequest, untrackRequest } = useRequestCancellation()
 
-  // Check authentication and load staff data on mount
+  // Check authentication and load staff data from API using URL params
   useEffect(() => {
     const token = localStorage.getItem('token')
 
@@ -41,7 +41,7 @@ const StaffProfile = () => {
       return
     }
 
-    // If no staff ID, redirect
+    // Get staff ID from URL params - this is the source of truth
     if (!id) {
       navigate('/staff', { replace: true })
       return
