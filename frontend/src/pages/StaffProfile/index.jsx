@@ -7,7 +7,7 @@ import AttendanceCalendar from '../../components/AttendanceCalendar/AttendanceCa
 import SalaryModal from '../../components/SalaryModal/SalaryModal'
 import EmptyState from '../../components/EmptyState/EmptyState'
 import Shimmer from '../../components/Shimmer'
-import { getStaffMember, updateStaffMember, updateStaffAttendance, deleteStaffMember } from '../../utils/staffData'
+import { getStaffMember, updateStaffMember, updateStaffAttendance, deleteStaffMember, getFreshStaffMember } from '../../utils/staffData'
 import { getCachedData } from '../../utils/apiCache'
 import { getCurrencySymbol } from '../../utils/currency'
 import { useRequestCancellation } from '../../utils/useRequestCancellation'
@@ -313,15 +313,19 @@ const StaffProfile = () => {
       }
 
       console.log('📤 Sending update request with data:', updateData)
-      const updatedStaff = await updateStaffMember(staff.id || staff._id, updateData)
-      console.log('📥 Received updated staff:', updatedStaff)
+      await updateStaffMember(staff.id || staff._id, updateData)
+      console.log('✅ Staff member updated in backend')
+
+      // Fetch fresh data from backend to ensure UI is always in sync
+      console.log('🔄 Fetching fresh data from backend...')
+      const freshStaff = await getFreshStaffMember(staff.id || staff._id)
 
       // Map MongoDB _id to id for compatibility
       const mappedStaff = {
-        ...updatedStaff,
-        id: updatedStaff._id || updatedStaff.id
+        ...freshStaff,
+        id: freshStaff._id || freshStaff.id
       }
-      console.log('🔄 Mapped staff object:', mappedStaff)
+      console.log('✅ Fresh staff data loaded:', mappedStaff)
 
       setStaff(mappedStaff)
       setFormData({

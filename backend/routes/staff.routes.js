@@ -28,14 +28,18 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     if (!isMongoConnected()) {
-      return sendErrorResponse(res, 404, 'Staff member not found')
+      return sendErrorResponse(res, 503, 'Database not connected')
     }
+
+    console.log(`📋 GET /api/staff/:id - Staff ID: ${req.params.id}, User ID: ${req.userId}`)
 
     const staff = await Staff.findOne({ _id: req.params.id, userId: req.userId })
     if (!staff) {
+      console.warn(`⚠️ Staff not found - ID: ${req.params.id}`)
       return sendErrorResponse(res, 404, 'Staff member not found')
     }
 
+    console.log(`✅ Staff fetched - ID: ${req.params.id}, Name: ${staff.name}`)
     return sendSuccessResponse(res, 200, 'Staff retrieved successfully', { staff })
   } catch (error) {
     console.error('Get staff error:', error)
