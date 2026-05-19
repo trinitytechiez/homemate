@@ -144,17 +144,13 @@ export const ensureMongoConnection = async () => {
         }
       }
       
-      console.log('ensureMongoConnection: Attempting to connect to MongoDB...')
-      console.log('ensureMongoConnection: URI configured:', !!connectionUri)
-      
       await mongoose.connect(connectionUri, mongooseOptions)
-      
+
       // Verify connection
       if (mongoose.connection.readyState === 1) {
-        console.log('ensureMongoConnection: Successfully connected to MongoDB')
         return true
       } else {
-        console.error('ensureMongoConnection: Connection completed but state is not connected:', mongoose.connection.readyState)
+        console.error('MongoDB connection completed but state is not connected:', mongoose.connection.readyState)
         return false
       }
     } catch (error) {

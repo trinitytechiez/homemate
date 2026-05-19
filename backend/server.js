@@ -56,13 +56,11 @@ const corsOptions = {
     // Matches: *.vercel.app, vercel.app, and any subdomain
     const vercelPattern = /^https?:\/\/[a-zA-Z0-9-]+\.vercel\.app$/
     if (vercelPattern.test(origin)) {
-      console.log(`✅ CORS allowed Vercel origin: ${origin}`)
       return callback(null, true)
     }
 
     // In development, allow all origins for easier testing
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
-      console.log(`✅ CORS allowed (development): ${origin}`)
       return callback(null, true)
     }
 
@@ -83,10 +81,6 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use((req, res, next) => {
-  console.log(`📡 ${req.method} ${req.path}`)
-  next()
-})
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homemate'
 
@@ -137,10 +131,6 @@ if (connectionUri.includes('mongodb+srv://') || connectionUri.includes('mongodb:
   }
 }
 
-console.log('🔌 Attempting to connect to MongoDB...')
-console.log('📍 URI:', connectionUri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@'))
-console.log('🔧 Node.js version:', process.version)
-
 // Check Node.js version compatibility
 const nodeVersion = process.version.match(/^v(\d+)\./)?.[1]
 if (nodeVersion && parseInt(nodeVersion) < 18) {
@@ -185,16 +175,13 @@ export const getMongooseOptions = () => mongooseOptions
 const connectMongoDB = async () => {
   // If already connected, return
   if (mongoose.connection.readyState === 1) {
-    console.log('✅ MongoDB already connected')
     return
   }
 
   // If connecting, wait a bit and check again
   if (mongoose.connection.readyState === 2) {
-    console.log('⏳ MongoDB connection in progress, waiting...')
     await new Promise(resolve => setTimeout(resolve, 1000))
     if (mongoose.connection.readyState === 1) {
-      console.log('✅ MongoDB connected after wait')
       return
     }
   }
@@ -206,9 +193,6 @@ const connectMongoDB = async () => {
     }
 
     await mongoose.connect(connectionUri, mongooseOptions)
-    console.log('✅ MongoDB connected successfully')
-    console.log('📊 Using real database for authentication')
-    console.log(`📈 Connection state: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`)
     cachedConnection = mongoose.connection
   } catch (error) {
     console.warn('⚠️  MongoDB connection failed - using mock authentication service')
@@ -264,46 +248,41 @@ const connectMongoDB = async () => {
 // For serverless, connection will be established on first request
 if (process.env.VERCEL !== '1') {
   connectMongoDB()
-} else {
-  // In Vercel, connect lazily on first request
-  console.log('🚀 Running on Vercel - MongoDB will connect on first request')
 }
 
 mongoose.connection.on('connected', () => {
-  console.log('✅ MongoDB connection established')
+  // Connection established
 })
 
 mongoose.connection.on('error', (err) => {
-  console.error('❌ MongoDB connection error:', err.message)
+  console.error('MongoDB connection error:', err.message)
 })
 
 mongoose.connection.on('disconnected', () => {
-  console.warn('⚠️  MongoDB disconnected. Attempting to reconnect...')
-  
+  console.warn('MongoDB disconnected. Attempting to reconnect...')
+
   setTimeout(async () => {
     try {
       if (mongoose.connection.readyState === 0) {
         await connectMongoDB()
       }
     } catch (error) {
-      console.error('❌ Reconnection failed:', error.message)
+      console.error('Reconnection failed:', error.message)
     }
   }, 5000)
 })
 
 mongoose.connection.on('reconnected', () => {
-  console.log('✅ MongoDB reconnected successfully')
+  // Connection reestablished
 })
 
 process.on('SIGINT', async () => {
   await mongoose.connection.close()
-  console.log('MongoDB connection closed due to application termination')
   process.exit(0)
 })
 
 process.on('SIGTERM', async () => {
   await mongoose.connection.close()
-  console.log('MongoDB connection closed due to application termination')
   process.exit(0)
 })
 
@@ -320,10 +299,9 @@ app.use(async (req, res, next) => {
       await connectMongoDB()
     } catch (error) {
       // Connection failed, but continue (routes will handle 503)
-      console.warn('Middleware: MongoDB connection attempt failed:', error.message)
     }
   }
-  
+
   // If connecting, wait for connection to complete (with timeout)
   if (mongoose.connection.readyState === 2) {
     const maxWait = 5000 // 5 seconds max wait
@@ -331,11 +309,6 @@ app.use(async (req, res, next) => {
     while (mongoose.connection.readyState === 2 && (Date.now() - startTime) < maxWait) {
       await new Promise(resolve => setTimeout(resolve, 100))
     }
-  }
-  
-  // If still not connected after waiting, log but continue
-  if (mongoose.connection.readyState !== 1) {
-    console.warn(`Middleware: MongoDB not connected (state: ${mongoose.connection.readyState}) for ${req.path}`)
   }
   
   next()
@@ -385,8 +358,7 @@ app.use((err, req, res, next) => {
 // Only start HTTP server if not on Vercel (Vercel handles this)
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`)
-    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`)
+    // Server started
   })
 }
 

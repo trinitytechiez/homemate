@@ -49,29 +49,19 @@ const Staff = () => {
   }, [navigate])
 
   useEffect(() => {
-    console.log('👥 Staff: useEffect triggered', {
-      signalAborted: signal?.aborted,
-      hasSignal: !!signal,
-      pathname: location.pathname
-    })
-
     let isMounted = true
     let hasCalled = false // Prevent double calls in StrictMode
 
     const loadData = async () => {
       // Prevent duplicate calls (React StrictMode causes double renders)
       if (hasCalled) {
-        console.log('👥 Staff: loadData already called, skipping duplicate')
         return
       }
       hasCalled = true
 
-      console.log('👥 Staff: loadData called')
       try {
         // Always fetch from API (bypass cache) to get fresh data
-        console.log('👥 Staff: Calling getStaffData with useCache=false')
         const data = await getStaffData(false, signal, trackRequest, untrackRequest)
-        console.log('👥 Staff: Received data', data)
         // Check if component is still mounted and request wasn't cancelled
         if (isMounted && !signal?.aborted) {
           const mappedData = data.map(staff => ({
@@ -80,21 +70,17 @@ const Staff = () => {
           }))
           setStaffData(mappedData)
           setIsLoading(false)
-          console.log('👥 Staff: Data set, loading false')
-        } else {
-          console.log('👥 Staff: Skipping state update', { isMounted, signalAborted: signal?.aborted })
         }
       } catch (error) {
         // Don't handle cancelled requests
         if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
-          console.log('👥 Staff: Request was cancelled')
           // Still set loading to false even if cancelled to prevent infinite loading
           if (isMounted) {
             setIsLoading(false)
           }
           return
         }
-        console.error('👥 Staff: Error loading staff data:', error)
+        console.error('Error loading staff data:', error)
         if (error.response?.status === 401) {
           navigate('/login', { replace: true })
           return
@@ -114,7 +100,6 @@ const Staff = () => {
     loadData()
 
     return () => {
-      console.log('👥 Staff: Cleanup - unmounting')
       isMounted = false
       // Ensure loading state is reset on cleanup to prevent stuck loading
       setIsLoading(false)
@@ -149,7 +134,7 @@ const Staff = () => {
   }, [navigate])
 
   const handleFilterClick = useCallback(() => {
-    console.log('Filter clicked')
+    // Filter clicked
   }, [])
 
   return (

@@ -16,36 +16,20 @@ export const getStaffData = async (useCache = true, signal = null, trackRequest 
   const requestId = `getStaffData-${Date.now()}-${Math.random()}`
   
   const requestFn = async () => {
-    console.log('🔄 getStaffData requestFn: Starting API call', { 
-      signalAborted: signal?.aborted,
-      hasSignal: !!signal,
-      requestId 
-    })
-
     // Track this request as ongoing FIRST, before making the API call
     // This ensures the request is tracked before any cancellation can happen
     if (trackRequest) {
-      console.log('📝 getStaffData: Tracking request', requestId)
       trackRequest(requestId)
     }
 
     // Don't check signal.aborted here - let the API call proceed
     // The axios call will handle abort properly, and we want to allow
     // requests to complete even if signal was briefly aborted during route changes
-    if (signal?.aborted) {
-      console.log('⚠️ getStaffData: Signal appears aborted, but proceeding (may be from old route)')
-    }
 
     try {
-      console.log('🌐 getStaffData: Making API call to /staff', { 
-        hasSignal: !!signal,
-        signalAborted: signal?.aborted 
-      })
       const response = await api.get('/staff', { signal })
-      console.log('✅ getStaffData: API call successful', response.data)
       // Untrack when request completes successfully
       if (untrackRequest) {
-        console.log('✅ getStaffData: Untracking request', requestId)
         untrackRequest(requestId)
       }
       // Return empty array if no staff data (valid case)
@@ -53,16 +37,10 @@ export const getStaffData = async (useCache = true, signal = null, trackRequest 
     } catch (error) {
       // Untrack when request fails or is cancelled
       if (untrackRequest) {
-        console.log('❌ getStaffData: Untracking request due to error', requestId)
         untrackRequest(requestId)
       }
       // Don't log cancelled requests - they're expected when route changes
       if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
-        console.log('🚫 getStaffData: Request was cancelled', {
-          code: error.code,
-          name: error.name,
-          message: error.message
-        })
         throw error
       }
       console.error('❌ getStaffData: Error fetching staff data:', error)
@@ -120,7 +98,6 @@ export const getStaffData = async (useCache = true, signal = null, trackRequest 
   }
   
   // Bypass cache - always make API call, but use deduplication to prevent duplicates
-  console.log('🔄 getStaffData: Bypassing cache, making API call (with deduplication)')
   return getOrCreateRequest(cacheKey, async () => {
     try {
       const data = await requestFn()
@@ -166,11 +143,9 @@ export const addStaffMember = async (staffData) => {
 // Update staff member via API
 export const updateStaffMember = async (staffId, updates) => {
   try {
-    console.log(`🔄 Updating staff ${staffId} with data:`, updates)
     const response = await api.put(`/staff/${staffId}`, updates)
 
     const updatedStaff = response.data.staff
-    console.log(`✅ Backend returned updated staff:`, updatedStaff)
 
     // Update cache with modified staff member
     const cached = getCachedData('/staff', {}, 10 * 1000)
@@ -179,15 +154,12 @@ export const updateStaffMember = async (staffId, updates) => {
         (staff._id === staffId || staff.id === staffId) ? updatedStaff : staff
       )
       setCachedData('/staff', {}, updatedCache, 10 * 1000)
-      console.log('✅ Updated staff list cache')
     } else {
       invalidateCachePattern('/staff')
-      console.log('⚠️ No cached staff list, invalidating pattern')
     }
 
     // Also update the individual staff cache with fresh data
     setCachedData(`/staff/${staffId}`, {}, updatedStaff, 30 * 1000)
-    console.log('✅ Updated individual staff cache')
 
     return updatedStaff
   } catch (error) {
@@ -291,14 +263,12 @@ export const getStaffMember = async (staffId, useCache = true, signal = null, tr
     if (trackRequest) trackRequest(requestId)
 
     try {
-      console.log(`📡 Fetching staff member ${staffId} from backend`)
       const response = await api.get(`/staff/${staffId}`, { signal })
       // Untrack when request completes successfully
       if (untrackRequest) untrackRequest(requestId)
       const data = response.data.staff
       // Cache the result
       setCachedData(`/staff/${staffId}`, {}, data, 30 * 1000)
-      console.log(`✅ Staff member ${staffId} fetched and cached`)
       return data
     } catch (error) {
       // Untrack when request fails or is cancelled
@@ -343,12 +313,10 @@ export const getStaffMember = async (staffId, useCache = true, signal = null, tr
 // Get fresh staff data bypassing cache - use after updates
 export const getFreshStaffMember = async (staffId) => {
   try {
-    console.log(`🔄 Fetching fresh staff data for ${staffId} (bypassing cache)`)
     const response = await api.get(`/staff/${staffId}`)
     const data = response.data.staff
     // Update cache with fresh data
     setCachedData(`/staff/${staffId}`, {}, data, 30 * 1000)
-    console.log(`✅ Fresh staff data cached for ${staffId}`)
     return data
   } catch (error) {
     console.error('Error fetching fresh staff member:', error)

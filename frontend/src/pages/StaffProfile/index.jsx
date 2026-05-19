@@ -304,10 +304,8 @@ const StaffProfile = () => {
         visitingTime: formData.visitingTime || ''
       }
 
-      console.log('📤 Updating staff with data:', updateData)
       // API returns updated staff with { new: true } - use as single source of truth
       const updatedStaff = await updateStaffMember(staff.id || staff._id, updateData)
-      console.log('✅ API response - updated staff data:', updatedStaff)
 
       // Map MongoDB _id to id for compatibility
       const mappedStaff = {

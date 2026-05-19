@@ -36,23 +36,14 @@ const Dashboard = () => {
   }, [])
 
   useEffect(() => {
-    console.log('📊 Dashboard: useEffect triggered', {
-      signalAborted: signal?.aborted,
-      hasSignal: !!signal,
-      pathname: location.pathname
-    })
-
     let isMounted = true
     let hasCalled = false
 
     const loadData = async () => {
       if (hasCalled) {
-        console.log('📊 Dashboard: loadData already called, skipping duplicate')
         return
       }
       hasCalled = true
-
-      console.log('📊 Dashboard: loadData called')
 
       // Show loading state only if we don't have cached data
       if (staffData.length === 0) {
@@ -61,7 +52,6 @@ const Dashboard = () => {
 
       try {
         const data = await getStaffData(true, signal, trackRequest, untrackRequest)
-        console.log('📊 Dashboard: Received data', data)
         if (isMounted && !signal?.aborted) {
           const mappedData = data.map(staff => ({
             ...staff,
@@ -69,19 +59,15 @@ const Dashboard = () => {
           }))
           setStaffData(mappedData)
           setIsLoading(false)
-          console.log('📊 Dashboard: Data set, loading false')
-        } else {
-          console.log('📊 Dashboard: Skipping state update', { isMounted, signalAborted: signal?.aborted })
         }
       } catch (error) {
         if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
-          console.log('📊 Dashboard: Request was cancelled')
           if (isMounted) {
             setIsLoading(false)
           }
           return
         }
-        console.error('📊 Dashboard: Error loading staff data:', error)
+        console.error('Error loading staff data:', error)
         if (error.response?.status !== 200 && error.response?.status !== 404 && error.response?.status !== 401) {
           showError('Failed to load staff data. Please try again.')
         }
@@ -94,7 +80,6 @@ const Dashboard = () => {
     loadData()
 
     return () => {
-      console.log('📊 Dashboard: Cleanup')
       isMounted = false
     }
   }, [location.pathname, staffData.length, signal, trackRequest, untrackRequest, showError])
