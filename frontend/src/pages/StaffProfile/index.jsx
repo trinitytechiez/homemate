@@ -116,6 +116,7 @@ const StaffProfile = () => {
   }, [id, navigate, openModal, signal, trackRequest, untrackRequest])
 
   const [formData, setFormData] = useState({
+    staffId: '',
     name: '',
     location: '',
     phoneNumber: '',
@@ -132,6 +133,7 @@ const StaffProfile = () => {
   useEffect(() => {
     if (staff && !isEditing) {
       setFormData({
+        staffId: staff.id || staff._id || '',
         name: staff.name || '',
         location: staff.location || '',
         phoneNumber: staff.phoneNumber?.replace('+91', '') || '',
@@ -232,6 +234,7 @@ const StaffProfile = () => {
     setIsEditing(false)
     // Reset form data to original staff data
     setFormData({
+      staffId: staff.id || staff._id || '',
       name: staff.name || '',
       location: staff.location || '',
       phoneNumber: staff.phoneNumber?.replace('+91', '') || '',
@@ -334,6 +337,7 @@ const StaffProfile = () => {
 
       setStaff(mappedStaff)
       setFormData({
+        staffId: mappedStaff.id || mappedStaff._id || '',
         name: mappedStaff.name || '',
         location: mappedStaff.location || '',
         phoneNumber: mappedStaff.phoneNumber?.replace('+91', '') || '',
@@ -479,6 +483,10 @@ const StaffProfile = () => {
         {/* Personal Details */}
         <div className={styles.detailsSection}>
           <h2 className={styles.sectionTitle}>Personal details</h2>
+          <div className={styles.detailItem}>
+            <span className={styles.detailLabel}>Staff ID</span>
+            <span className={styles.detailValue}>{formData.staffId || <span style={{ color: '#999999', fontStyle: 'italic' }}>Not available</span>}</span>
+          </div>
           <div className={styles.detailItem}>
             <span className={`${styles.detailLabel} ${errors.name ? styles.labelError : ''}`}>Name</span>
             {isEditing ? (
