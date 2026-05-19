@@ -103,7 +103,7 @@ const StaffProfile = () => {
     }
 
     loadData()
-  }, [id, navigate, openModal, signal, trackRequest, untrackRequest])
+  }, [id, navigate, openModal])
 
   const [formData, setFormData] = useState({
     staffId: '',
