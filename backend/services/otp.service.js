@@ -27,10 +27,6 @@ class SMSProvider {
 // Console SMS Provider (for development)
 class ConsoleSMSProvider extends SMSProvider {
   async sendSMS(phoneNumber, message) {
-    console.log('\n📱 SMS (Development Mode):')
-    console.log(`To: ${phoneNumber}`)
-    console.log(`Message: ${message}`)
-    console.log('---\n')
     return { success: true, messageId: `dev-${Date.now()}` }
   }
 }

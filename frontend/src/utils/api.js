@@ -22,11 +22,6 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl()
 
-// Always log API URL for debugging (helps identify caching issues)
-console.log('🔗 API URL configured:', API_URL)
-console.log('🔗 VITE_API_URL env var:', import.meta.env.VITE_API_URL || 'NOT SET')
-console.log('🔗 Current hostname:', window.location.hostname)
-
 const api = axios.create({
   baseURL: API_URL,
   timeout: 10000, // 10 seconds timeout
@@ -42,26 +37,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    
-    // If signal is provided, use it for cancellation
-    if (config.signal && config.signal.aborted) {
-      console.warn('⚠️ Request aborted before sending:', config.url)
-    }
-    
-    // Log request in development
-    if (import.meta.env.DEV) {
-      console.log('📤 API Request:', {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        baseURL: config.baseURL,
-        fullURL: `${config.baseURL}${config.url}`,
-        cancelled: config.signal?.aborted || false
-      })
-    }
     return config
   },
   (error) => {
-    console.error('❌ Request interceptor error:', error)
+    console.error('Request interceptor error:', error)
     return Promise.reject(error)
   }
 )
@@ -69,44 +48,20 @@ api.interceptors.request.use(
 // Handle response errors
 api.interceptors.response.use(
   (response) => {
-    // Log successful responses in development
-    if (import.meta.env.DEV) {
-      console.log('📥 API Response:', {
-        status: response.status,
-        url: response.config.url,
-        data: response.data
-      })
-    }
     return response
   },
   (error) => {
-    // Don't log or handle cancelled requests
+    // Don't handle cancelled requests
     if (error.code === 'ERR_CANCELED' || error.message === 'canceled' || error.name === 'AbortError') {
-      if (import.meta.env.DEV) {
-        console.log('🚫 Request cancelled:', error.config?.url)
-      }
       return Promise.reject(error)
     }
-    
+
     // Log error responses
-    console.error('📥 API Error Response:', {
+    console.error('API Error:', {
       status: error.response?.status,
-      statusText: error.response?.statusText,
-      url: error.config?.url,
-      baseURL: error.config?.baseURL,
-      message: error.message,
-      data: error.response?.data
+      message: error.message
     })
-    
-    // Check for network errors (no response)
-    if (!error.response) {
-      console.error('🌐 Network Error - No response from server:', {
-        message: error.message,
-        code: error.code,
-        config: error.config
-      })
-    }
-    
+
     if (error.response?.status === 401) {
       // Clear auth state and dispatch logout so app-wide listeners redirect to login
       clearAuth()
