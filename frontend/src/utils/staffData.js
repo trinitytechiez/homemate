@@ -166,20 +166,30 @@ export const addStaffMember = async (staffData) => {
 // Update staff member via API
 export const updateStaffMember = async (staffId, updates) => {
   try {
+    console.log(`🔄 Updating staff ${staffId} with data:`, updates)
     const response = await api.put(`/staff/${staffId}`, updates)
+
+    const updatedStaff = response.data.staff
+    console.log(`✅ Backend returned updated staff:`, updatedStaff)
+
     // Update cache with modified staff member
     const cached = getCachedData('/staff', {}, 10 * 1000)
     if (cached && Array.isArray(cached)) {
       const updatedCache = cached.map(staff =>
-        (staff._id === staffId || staff.id === staffId) ? response.data.staff : staff
+        (staff._id === staffId || staff.id === staffId) ? updatedStaff : staff
       )
       setCachedData('/staff', {}, updatedCache, 10 * 1000)
+      console.log('✅ Updated staff list cache')
     } else {
       invalidateCachePattern('/staff')
+      console.log('⚠️ No cached staff list, invalidating pattern')
     }
-    // Also update the individual staff cache
-    setCachedData(`/staff/${staffId}`, {}, response.data.staff, 30 * 1000)
-    return response.data.staff
+
+    // Also update the individual staff cache with fresh data
+    setCachedData(`/staff/${staffId}`, {}, updatedStaff, 30 * 1000)
+    console.log('✅ Updated individual staff cache')
+
+    return updatedStaff
   } catch (error) {
     console.error('Error updating staff member:', error)
     throw error
