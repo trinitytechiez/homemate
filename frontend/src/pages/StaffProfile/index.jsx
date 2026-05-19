@@ -41,18 +41,7 @@ const StaffProfile = () => {
       return
     }
 
-    // If staff data is already in location state, use it immediately (no loading)
-    if (staff && staff.id) {
-      const mappedStaff = {
-        ...staff,
-        id: staff._id || staff.id
-      }
-      setStaff(mappedStaff)
-      setIsLoading(false)
-      return
-    }
-
-    // If no staff data, show loading and fetch
+    // If no staff ID, redirect
     if (!id) {
       navigate('/staff', { replace: true })
       return
@@ -74,7 +63,8 @@ const StaffProfile = () => {
       }
 
       try {
-        const staffData = await getStaffMember(id, true, signal, trackRequest, untrackRequest)
+        // Always fetch fresh data from API for non-edit mode display
+        const staffData = await getStaffMember(id, false, signal, trackRequest, untrackRequest)
         // Check if component is still mounted and request wasn't cancelled
         if (!signal?.aborted) {
           // Map MongoDB _id to id for compatibility
@@ -299,7 +289,6 @@ const StaffProfile = () => {
     }
 
     try {
-      // Update staff data via API
       const updateData = {
         name: formData.name.trim(),
         location: formData.location.trim(),
@@ -315,26 +304,18 @@ const StaffProfile = () => {
         visitingTime: formData.visitingTime || ''
       }
 
-      console.log('📤 Sending update request with data:', updateData)
-      // The response from PUT already contains the updated document (new: true in backend)
-      await updateStaffMember(staff.id || staff._id, updateData)
-      console.log('✅ Update request completed')
-
-      // Wait a brief moment for database to fully persist the update
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Fetch fresh data by bypassing cache to ensure we get the latest from database
-      console.log('🔄 Fetching fresh staff data from backend to verify update...')
-      const freshStaff = await getStaffMember(staff.id || staff._id, false)
-      console.log('✅ Received fresh staff data from backend:', freshStaff)
+      console.log('📤 Updating staff with data:', updateData)
+      // API returns updated staff with { new: true } - use as single source of truth
+      const updatedStaff = await updateStaffMember(staff.id || staff._id, updateData)
+      console.log('✅ API response - updated staff data:', updatedStaff)
 
       // Map MongoDB _id to id for compatibility
       const mappedStaff = {
-        ...freshStaff,
-        id: freshStaff._id || freshStaff.id
+        ...updatedStaff,
+        id: updatedStaff._id || updatedStaff.id
       }
-      console.log('✅ Using fresh data from database:', mappedStaff)
 
+      // Update state with API response (single source of truth)
       setStaff(mappedStaff)
       setFormData({
         staffId: mappedStaff.id || mappedStaff._id || '',
