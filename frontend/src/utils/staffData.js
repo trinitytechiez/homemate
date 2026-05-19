@@ -177,6 +177,8 @@ export const updateStaffMember = async (staffId, updates) => {
     } else {
       invalidateCachePattern('/staff')
     }
+    // Also update the individual staff cache
+    setCachedData(`/staff/${staffId}`, {}, response.data.staff, 30 * 1000)
     return response.data.staff
   } catch (error) {
     console.error('Error updating staff member:', error)
