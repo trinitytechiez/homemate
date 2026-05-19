@@ -177,6 +177,8 @@ export const updateStaffMember = async (staffId, updates) => {
     } else {
       invalidateCachePattern('/staff')
     }
+    // Also update/set cache for individual staff member to ensure fresh data on profile page
+    setCachedData(`/staff/${staffId}`, {}, response.data.staff, 30 * 1000)
     return response.data.staff
   } catch (error) {
     console.error('Error updating staff member:', error)
@@ -206,6 +208,8 @@ export const updateStaffAttendance = async (staffId, { absentDates, isAbsentToda
     } else {
       invalidateCachePattern('/staff')
     }
+    // Also update/set cache for individual staff member to ensure fresh data on profile page
+    setCachedData(`/staff/${staffId}`, {}, response.data.staff, 30 * 1000)
     return response.data.staff
   } catch (error) {
     console.error('Error updating attendance:', error)
