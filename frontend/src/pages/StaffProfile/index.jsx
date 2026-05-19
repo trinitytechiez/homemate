@@ -313,19 +313,24 @@ const StaffProfile = () => {
       }
 
       console.log('📤 Sending update request with data:', updateData)
+      // The response from PUT already contains the updated document (new: true in backend)
       await updateStaffMember(staff.id || staff._id, updateData)
-      console.log('✅ Staff member updated in backend')
+      console.log('✅ Update request completed')
 
-      // Fetch fresh data from backend to ensure UI is always in sync
-      console.log('🔄 Fetching fresh data from backend...')
-      const freshStaff = await getFreshStaffMember(staff.id || staff._id)
+      // Wait a brief moment for database to fully persist the update
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Fetch fresh data by bypassing cache to ensure we get the latest from database
+      console.log('🔄 Fetching fresh staff data from backend to verify update...')
+      const freshStaff = await getStaffMember(staff.id || staff._id, false)
+      console.log('✅ Received fresh staff data from backend:', freshStaff)
 
       // Map MongoDB _id to id for compatibility
       const mappedStaff = {
         ...freshStaff,
         id: freshStaff._id || freshStaff.id
       }
-      console.log('✅ Fresh staff data loaded:', mappedStaff)
+      console.log('✅ Using fresh data from database:', mappedStaff)
 
       setStaff(mappedStaff)
       setFormData({
