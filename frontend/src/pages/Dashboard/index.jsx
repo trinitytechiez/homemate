@@ -22,22 +22,18 @@ const Dashboard = () => {
   const [staffData, setStaffData] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Check cache synchronously on every mount and update state immediately
+  // Check cache synchronously on mount to show cached data immediately
   useLayoutEffect(() => {
     const cached = getCachedData('/staff', {}, 10 * 1000)
     if (cached !== null) {
-      // If cached, use it immediately without loading state
       const mappedData = cached.map(staff => ({
         ...staff,
         id: staff._id || staff.id
       }))
       setStaffData(mappedData)
       setIsLoading(false)
-    } else {
-      // If not cached, show shimmer
-      setIsLoading(true)
     }
-  }, [location.pathname]) // Re-run when route changes
+  }, [])
 
   useEffect(() => {
     console.log('📊 Dashboard: useEffect triggered', {
@@ -47,10 +43,9 @@ const Dashboard = () => {
     })
 
     let isMounted = true
-    let hasCalled = false // Prevent double calls in StrictMode
+    let hasCalled = false
 
     const loadData = async () => {
-      // Prevent duplicate calls (React StrictMode causes double renders)
       if (hasCalled) {
         console.log('📊 Dashboard: loadData already called, skipping duplicate')
         return
@@ -58,11 +53,15 @@ const Dashboard = () => {
       hasCalled = true
 
       console.log('📊 Dashboard: loadData called')
+
+      // Show loading state only if we don't have cached data
+      if (staffData.length === 0) {
+        setIsLoading(true)
+      }
+
       try {
-        // Use cache for faster loading (stale-while-revalidate)
         const data = await getStaffData(true, signal, trackRequest, untrackRequest)
         console.log('📊 Dashboard: Received data', data)
-        // Check if component is still mounted and request wasn't cancelled
         if (isMounted && !signal?.aborted) {
           const mappedData = data.map(staff => ({
             ...staff,
@@ -75,10 +74,8 @@ const Dashboard = () => {
           console.log('📊 Dashboard: Skipping state update', { isMounted, signalAborted: signal?.aborted })
         }
       } catch (error) {
-        // Don't handle cancelled requests
         if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
           console.log('📊 Dashboard: Request was cancelled')
-          // Still set loading to false even if cancelled to prevent infinite loading
           if (isMounted) {
             setIsLoading(false)
           }
@@ -88,22 +85,19 @@ const Dashboard = () => {
         if (error.response?.status !== 200 && error.response?.status !== 404 && error.response?.status !== 401) {
           showError('Failed to load staff data. Please try again.')
         }
-        if (isMounted && !signal?.aborted) {
+        if (isMounted) {
           setIsLoading(false)
         }
       }
     }
 
-    // Always call API to refresh data
     loadData()
 
     return () => {
-      console.log('📊 Dashboard: Cleanup - unmounting')
+      console.log('📊 Dashboard: Cleanup')
       isMounted = false
-      // Ensure loading state is reset on cleanup to prevent stuck loading
-      setIsLoading(false)
     }
-  }, [location.pathname]) // Re-run when navigating back to dashboard
+  }, [location.pathname, staffData.length, signal, trackRequest, untrackRequest, showError])
 
   // Memoize date formatting to avoid recalculation on every render
   const { formattedDate, monthName } = useMemo(() => {

@@ -145,8 +145,17 @@ export const saveStaffData = async (staffData) => {
 export const addStaffMember = async (staffData) => {
   try {
     const response = await api.post('/staff', staffData)
-    // Invalidate staff list cache
-    invalidateCachePattern('/staff')
+    // Get current cached data and append new staff
+    const cached = getCachedData('/staff', {}, 10 * 1000)
+    if (cached && Array.isArray(cached)) {
+      // Optimistically add the new staff to cache
+      const newStaff = response.data.staff
+      const updatedCache = [...cached, newStaff]
+      setCachedData('/staff', {}, updatedCache, 10 * 1000)
+    } else {
+      // If no cache, just invalidate to force refresh
+      invalidateCachePattern('/staff')
+    }
     return response.data.staff
   } catch (error) {
     console.error('Error adding staff member:', error)
@@ -158,8 +167,16 @@ export const addStaffMember = async (staffData) => {
 export const updateStaffMember = async (staffId, updates) => {
   try {
     const response = await api.put(`/staff/${staffId}`, updates)
-    // Invalidate staff list and individual staff caches
-    invalidateCachePattern('/staff')
+    // Update cache with modified staff member
+    const cached = getCachedData('/staff', {}, 10 * 1000)
+    if (cached && Array.isArray(cached)) {
+      const updatedCache = cached.map(staff =>
+        (staff._id === staffId || staff.id === staffId) ? response.data.staff : staff
+      )
+      setCachedData('/staff', {}, updatedCache, 10 * 1000)
+    } else {
+      invalidateCachePattern('/staff')
+    }
     return response.data.staff
   } catch (error) {
     console.error('Error updating staff member:', error)
@@ -179,8 +196,16 @@ export const updateStaffAttendance = async (staffId, { absentDates, isAbsentToda
       payload.halfDayDates = Array.isArray(halfDayDates) ? halfDayDates : Array.from(halfDayDates)
     }
     const response = await api.patch(`/staff/${staffId}/attendance`, payload)
-    // Invalidate staff list and individual staff caches
-    invalidateCachePattern('/staff')
+    // Update cache with modified staff member
+    const cached = getCachedData('/staff', {}, 10 * 1000)
+    if (cached && Array.isArray(cached)) {
+      const updatedCache = cached.map(staff =>
+        (staff._id === staffId || staff.id === staffId) ? response.data.staff : staff
+      )
+      setCachedData('/staff', {}, updatedCache, 10 * 1000)
+    } else {
+      invalidateCachePattern('/staff')
+    }
     return response.data.staff
   } catch (error) {
     console.error('Error updating attendance:', error)
