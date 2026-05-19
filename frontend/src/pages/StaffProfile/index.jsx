@@ -144,7 +144,7 @@ const StaffProfile = () => {
         visitingTime: staff.visitingTime || ''
       })
     }
-  }, [staff?.id])
+  }, [staff, isEditing])
 
   const [errors, setErrors] = useState({})
 
