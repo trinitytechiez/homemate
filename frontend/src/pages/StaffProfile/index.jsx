@@ -29,6 +29,9 @@ const StaffProfile = () => {
 
   // Staff data state - initialized empty, always fetched fresh from API using URL params
   const [staff, setStaff] = useState(null)
+  const [retryCount, setRetryCount] = useState(0)
+  const maxRetries = 4
+  const retryDelayMs = (attempt) => Math.pow(2, attempt) * 500 // Exponential backoff: 500ms, 1s, 2s, 4s
 
   const { signal, trackRequest, untrackRequest } = useRequestCancellation()
 
@@ -73,25 +76,42 @@ const StaffProfile = () => {
             id: staffData._id || staffData.id
           }
           setStaff(mappedStaff)
+          setRetryCount(0) // Reset retry count on success
         }
       } catch (error) {
         // Don't handle cancelled requests
         if (error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message === 'Request cancelled') {
           return
         }
-        console.error('Error loading staff data:', error)
+
+        // Handle non-retryable errors (auth/not found)
         if (error.response?.status === 401) {
+          console.error('Authentication failed:', error)
           navigate('/login', { replace: true })
           return
         }
         if (error.response?.status === 404) {
+          console.error('Staff member not found:', error)
           navigate('/staff', { replace: true })
           return
         }
-        if (!signal?.aborted) {
+
+        // Retryable errors
+        console.error(`Error loading staff data (attempt ${retryCount + 1}/${maxRetries + 1}):`, error)
+
+        if (retryCount < maxRetries && !signal?.aborted) {
+          // Schedule retry with exponential backoff
+          const delay = retryDelayMs(retryCount)
+          console.log(`Retrying in ${delay}ms...`)
+          setTimeout(() => {
+            setRetryCount(retryCount + 1)
+          }, delay)
+        } else if (!signal?.aborted) {
+          // Max retries exhausted
+          console.error('Max retries exhausted, showing error to user')
           openModal({
             title: 'Error',
-            content: <p>Failed to load staff data. Please try again.</p>,
+            content: <p>Failed to load staff data after {maxRetries + 1} attempts. Please check your connection and try again.</p>,
             size: 'small'
           })
         }
@@ -103,7 +123,7 @@ const StaffProfile = () => {
     }
 
     loadData()
-  }, [id, navigate, openModal])
+  }, [id, navigate, openModal, retryCount])
 
   const [formData, setFormData] = useState({
     staffId: '',
