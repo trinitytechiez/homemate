@@ -269,7 +269,7 @@ export const deleteStaffMember = async (staffId) => {
 // Get single staff member via API
 export const getStaffMember = async (staffId, useCache = true, signal = null, trackRequest = null, untrackRequest = null) => {
   const requestId = `getStaffMember-${staffId}-${Date.now()}-${Math.random()}`
-  
+
   const requestFn = async () => {
     // Only make request if signal is not already aborted
     if (signal?.aborted) {
@@ -281,12 +281,14 @@ export const getStaffMember = async (staffId, useCache = true, signal = null, tr
     if (trackRequest) trackRequest(requestId)
 
     try {
+      console.log(`📡 Fetching staff member ${staffId} from backend`)
       const response = await api.get(`/staff/${staffId}`, { signal })
       // Untrack when request completes successfully
       if (untrackRequest) untrackRequest(requestId)
       const data = response.data.staff
       // Cache the result
       setCachedData(`/staff/${staffId}`, {}, data, 30 * 1000)
+      console.log(`✅ Staff member ${staffId} fetched and cached`)
       return data
     } catch (error) {
       // Untrack when request fails or is cancelled
@@ -315,15 +317,31 @@ export const getStaffMember = async (staffId, useCache = true, signal = null, tr
       }, 0)
       return Promise.resolve(cached)
     }
-    
+
     // Only make request if not cached and not already cancelled
     if (signal?.aborted) {
       throw new Error('Request cancelled')
     }
-    
+
     // Cache for 30 seconds for individual staff
     return requestFn()
   }
-  
+
   return requestFn()
+}
+
+// Get fresh staff data bypassing cache - use after updates
+export const getFreshStaffMember = async (staffId) => {
+  try {
+    console.log(`🔄 Fetching fresh staff data for ${staffId} (bypassing cache)`)
+    const response = await api.get(`/staff/${staffId}`)
+    const data = response.data.staff
+    // Update cache with fresh data
+    setCachedData(`/staff/${staffId}`, {}, data, 30 * 1000)
+    console.log(`✅ Fresh staff data cached for ${staffId}`)
+    return data
+  } catch (error) {
+    console.error('Error fetching fresh staff member:', error)
+    throw error
+  }
 }
