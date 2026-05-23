@@ -20,12 +20,6 @@ export const useRequestCancellation = () => {
     const pathnameChanged = prevPathnameRef.current !== location.pathname
 
     if (pathnameChanged) {
-      console.log('🔄 useRequestCancellation: Route changed, new controller created', {
-        oldPathname: prevPathnameRef.current,
-        newPathname: location.pathname,
-        ongoingRequests: ongoingRequestsRef.current.size
-      })
-
       // For actual route changes, replace the controller and abort old requests after a small delay
       const oldController = abortControllerRef.current
       abortControllerRef.current = new AbortController()
@@ -37,9 +31,6 @@ export const useRequestCancellation = () => {
         // Only cancel ongoing requests from the OLD controller
         // New requests should already be using the new controller
         if (ongoingRequestsRef.current.size > 0) {
-          console.log('🚫 useRequestCancellation: Aborting old requests', {
-            count: ongoingRequestsRef.current.size
-          })
           oldController.abort()
           ongoingRequestsRef.current.clear()
         }
@@ -50,25 +41,15 @@ export const useRequestCancellation = () => {
         clearTimeout(timeoutId)
         // Only abort if there are actually ongoing requests
         if (ongoingRequestsRef.current.size > 0) {
-          console.log('🚫 useRequestCancellation: Cleanup - aborting requests', {
-            count: ongoingRequestsRef.current.size
-          })
           abortControllerRef.current.abort()
           ongoingRequestsRef.current.clear()
         }
       }
     } else {
       // Same pathname (StrictMode remount) - don't create new controller
-      console.log('🔄 useRequestCancellation: Same pathname, keeping existing controller', {
-        pathname: location.pathname
-      })
-
       // Cleanup on unmount: abort only if there are actually ongoing requests
       return () => {
         if (ongoingRequestsRef.current.size > 0) {
-          console.log('🚫 useRequestCancellation: Cleanup - aborting requests on unmount', {
-            count: ongoingRequestsRef.current.size
-          })
           abortControllerRef.current.abort()
           ongoingRequestsRef.current.clear()
         }

@@ -295,22 +295,10 @@ const Login = () => {
         password: trimmedPassword
       }
 
-      // Debug logging (only in development)
-      if (process.env.NODE_ENV === 'development' && import.meta.env.DEV) {
-        // Logging disabled - remove if needed for debugging
-      }
-
-      // Log the request for debugging
-      console.log('🔐 Attempting login with:', { email: trimmedEmail, passwordLength: trimmedPassword.length })
-      console.log('🔗 API Base URL:', api.defaults.baseURL)
-
       const response = await api.post('/auth/login', loginData)
-
-      console.log('✅ Login response received:', response.status)
 
       // Check if token exists in response
       if (!response.data.token) {
-        console.error('❌ No token in response:', response.data)
         throw new Error('No token received from server')
       }
 
@@ -318,19 +306,6 @@ const Login = () => {
       setAuth(response.data.token)
       navigate('/dashboard', { replace: true })
     } catch (error) {
-      console.error('❌ Login error:', error)
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        config: {
-          url: error.config?.url,
-          baseURL: error.config?.baseURL,
-          method: error.config?.method
-        }
-      })
-
       // Check for network errors
       if (!error.response) {
         const networkError = error.message || 'Network error - unable to reach server'

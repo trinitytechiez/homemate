@@ -9,7 +9,6 @@ import { sendErrorResponse, sendSuccessResponse } from '../utils/response.utils.
 const router = express.Router()
 
 router.get('/', authMiddleware, async (req, res) => {
-  console.log(`🔍 GET /api/staff - User ID: ${req.userId}`)
   try {
     if (!isMongoConnected()) {
       return sendSuccessResponse(res, 200, 'Staff retrieved successfully', { staff: [] })
@@ -31,15 +30,10 @@ router.get('/:id', authMiddleware, async (req, res) => {
       return sendErrorResponse(res, 503, 'Database not connected')
     }
 
-    console.log(`📋 GET /api/staff/:id - Staff ID: ${req.params.id}, User ID: ${req.userId}`)
-
     const staff = await Staff.findOne({ _id: req.params.id, userId: req.userId })
     if (!staff) {
-      console.warn(`⚠️ Staff not found - ID: ${req.params.id}`)
       return sendErrorResponse(res, 404, 'Staff member not found')
     }
-
-    console.log(`✅ Staff fetched - ID: ${req.params.id}, Name: ${staff.name}`)
     return sendSuccessResponse(res, 200, 'Staff retrieved successfully', { staff })
   } catch (error) {
     console.error('Get staff error:', error)
@@ -112,9 +106,6 @@ router.put(
 
       if (!checkValidation(req, res)) return
 
-      console.log(`📝 PUT /api/staff/:id - Updating staff ${req.params.id}`)
-      console.log('📋 Update payload:', req.body)
-
       const staff = await Staff.findOneAndUpdate(
         { _id: req.params.id, userId: req.userId },
         { $set: req.body },
@@ -122,12 +113,8 @@ router.put(
       )
 
       if (!staff) {
-        console.warn(`⚠️ Staff not found - ID: ${req.params.id}`)
         return sendErrorResponse(res, 404, 'Staff member not found')
       }
-
-      console.log(`✅ Staff updated successfully - ID: ${req.params.id}`)
-      console.log('💾 Updated staff object from DB:', staff)
 
       return sendSuccessResponse(res, 200, 'Staff member updated successfully', { staff })
     } catch (error) {

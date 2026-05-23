@@ -114,7 +114,7 @@ const SalaryModal = ({ staff, onStaffUpdate, onClose }) => {
       onStaffUpdate(updated)
       setPaymentSaved(true)
     } catch (e) {
-      console.error(e)
+      // Error is silently caught and UI state is handled in finally
     } finally {
       setIsSavingPayment(false)
     }
@@ -163,7 +163,7 @@ const SalaryModal = ({ staff, onStaffUpdate, onClose }) => {
       setAdvAmount('')
       setAdvNote('')
     } catch (e) {
-      console.error(e)
+      // Error is silently caught and UI state is handled in finally
     } finally {
       setIsSavingAdv(false)
     }
@@ -175,7 +175,7 @@ const SalaryModal = ({ staff, onStaffUpdate, onClose }) => {
       const updated = await deleteAdvance(staff._id || staff.id, advId)
       onStaffUpdate(updated)
     } catch (e) {
-      console.error(e)
+      // Error is silently caught and UI state is handled in finally
     } finally {
       setDeletingId(null)
     }

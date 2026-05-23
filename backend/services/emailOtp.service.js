@@ -27,11 +27,6 @@ class EmailProvider {
 // Console Email Provider (for development)
 class ConsoleEmailProvider extends EmailProvider {
   async sendEmail(to, subject, html) {
-    console.log('\n📧 Email (Development Mode):')
-    console.log(`To: ${to}`)
-    console.log(`Subject: ${subject}`)
-    console.log(`Body: ${html}`)
-    console.log('---\n')
     return { success: true, messageId: `dev-${Date.now()}` }
   }
 }
